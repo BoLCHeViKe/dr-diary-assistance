@@ -6,3 +6,6 @@ venv/
 
 # Ignorar todos los archivos que terminen en .log
 *.log
+backend/vendor/
+backend/.env
+frontend/node_modules/
