@@ -1,0 +1,40 @@
+services:
+
+ mariadb:
+    image: mariadb:11
+    container_name: dda_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: drdiaryassistance
+      MYSQL_USER: dda_user
+      MYSQL_PASSWORD: dda_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - dda_mariadb_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: dda_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      - mariadb
+
+  frontend:
+    build: ./frontend
+    container_name: dda_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+
+volumes:
+  dda_mariadb_data:
