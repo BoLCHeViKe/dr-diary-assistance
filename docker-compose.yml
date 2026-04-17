@@ -30,7 +30,7 @@ services:
     container_name: dda_frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "4200:4200"
     volumes:
       - ./frontend:/app
     depends_on:
