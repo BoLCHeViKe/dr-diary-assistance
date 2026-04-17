@@ -6,21 +6,36 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->id(); // Este será el ID que hereden admins y medicos
+            
+            // Campos de identificación y login
+            $table->string('email', 70)->unique();
+            $table->string('password'); // Laravel usa 'password', mejor mantener el nombre estándar
+            $table->char('dni', 9)->unique();
+            
+            // Campos de nombre completo
+            $table->string('nombre', 30);
+            $table->string('apellido1', 30);
+            $table->string('apellido2', 30);
+            
+            // Rol (Relación con tu tabla rol)
+            $table->unsignedBigInteger('id_rol')->default(2);
+            $table->foreign('id_rol')
+                  ->references('id')
+                  ->on('rol')
+                  ->onDelete('restrict')
+                  ->onUpdate('cascade');
+
+            // Campos nativos de Laravel para seguridad y sesiones
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamps(); // Esto añade created_at y updated_at automáticamente
         });
 
+        // Las tablas de sistema las dejamos igual para que Laravel funcione bien
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
@@ -37,9 +52,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');
