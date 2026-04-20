@@ -15,6 +15,7 @@ class Paciente extends Model
         'apellido2',
         'fecha_nac',
         'telf',
+        'email',
         'nhc'
     ];
 

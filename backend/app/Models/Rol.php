@@ -13,4 +13,16 @@ class Rol extends Model
     {
         return $this->hasMany(User::class, 'id_rol', 'id');
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($rol) {
+            if (in_array($rol->id, [1, 2])) {
+                //throw new \Exception("No se pueden eliminar los roles vitales del sistema.");
+                abort(403, 'No se pueden eliminar los roles vitales del sistema.');
+            }
+        });
+    }
 }
