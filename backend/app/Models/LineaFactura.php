@@ -6,7 +6,23 @@ class LineaFactura extends Model
 {
     protected $table = 'lineafactura';
     public $timestamps = false;
-    // Como es clave primaria compuesta, Eloquent necesita ayuda:
-    protected $primaryKey = null;
+
+    protected $primaryKey = ['num_linea', 'num_fact'];
     public $incrementing = false;
+
+    protected $fillable = [
+        'cantidad',
+        'codigo_esp',
+        'id_prest',
+        'precio',   // el trigger lo sobrescribe, pero debe estar aquí
+        'total'     // ídem
+    ];
+
+    // Una línea pertenece a una factura
+    public function factura()
+    {
+        return $this->belongsTo(Factura::class, 'num_fact', 'num_fact');
+    }
+
+
 }
