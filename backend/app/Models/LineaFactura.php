@@ -11,6 +11,7 @@ class LineaFactura extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'num_fact',
         'cantidad',
         'codigo_esp',
         'id_prest',
