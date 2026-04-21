@@ -35,9 +35,9 @@ class PacienteController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre'    => 'required|string|max:50',
-            'apellido1' => 'required|string|max:50',
-            'apellido2' => 'nullable|string|max:50',
+            'nombre'    => 'required|string|max:30',
+            'apellido1' => 'required|string|max:30',
+            'apellido2' => 'nullable|string|max:30',
             'fecha_nac' => 'nullable|date',
             'dni' => [
                 'required',
@@ -45,7 +45,7 @@ class PacienteController extends Controller
                 'unique:paciente,dni', // Único en la tabla paciente
                 'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
             ],
-            'telf'  => 'nullable|string|max:15',
+            'telf'  => 'nullable|string|max:13',
             'email' => 'nullable|email:rfc|max:64|unique:paciente,email', // <-- Único aquí también (OJO!! |email:rfc,dns| si queremos que compruebe email reales)
             'direccion' => 'nullable|string|max:100',
         ]);
@@ -90,9 +90,9 @@ class PacienteController extends Controller
         }
 
         $request->validate([
-            'nombre'    => 'sometimes|string|max:50',
-            'apellido1' => 'sometimes|string|max:50',
-            'apellido2' => 'sometimes|nullable|string|max:50',
+            'nombre'    => 'sometimes|string|max:30',
+            'apellido1' => 'sometimes|string|max:30',
+            'apellido2' => 'sometimes|nullable|string|max:30',
             'fecha_nac' => 'sometimes|nullable|date',
             'dni' => [
                 'sometimes',
@@ -107,7 +107,7 @@ class PacienteController extends Controller
                 'max:64',
                 Rule::unique('paciente', 'email')->ignore($id, 'id_paciente') // Ignora al paciente actual
             ],
-            'telf'      => 'sometimes|nullable|string|max:15',
+            'telf'      => 'sometimes|nullable|string|max:13',
             'direccion' => 'sometimes|nullable|string|max:100',
         ]);
 

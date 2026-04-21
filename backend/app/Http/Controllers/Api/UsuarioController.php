@@ -47,7 +47,7 @@ class UsuarioController extends Controller
                             'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
                         ],
             'fecha_nac' => 'sometimes|nullable|date',
-            'telf'      => 'sometimes|nullable|string|max:15',
+            'telf'      => 'sometimes|nullable|string|max:13',
             'direccion' => 'sometimes|nullable|string|max:100',
             'id_rol'    => 'required|exists:rol,id',
             'num_col'   => 'required_if:id_rol,2|string|max:10',
@@ -117,7 +117,7 @@ class UsuarioController extends Controller
                 'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
             ],
             'fecha_nac' => 'sometimes|nullable|date',
-            'telf'      => 'sometimes|nullable|string|max:15',
+            'telf'      => 'sometimes|nullable|string|max:13',
             'direccion' => 'sometimes|nullable|string|max:100',
             'num_col'   => 'sometimes|string|max:10',
             'num_auto'  => 'sometimes|string|max:10',
