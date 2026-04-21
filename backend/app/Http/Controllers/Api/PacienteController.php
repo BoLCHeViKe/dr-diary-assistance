@@ -38,6 +38,7 @@ class PacienteController extends Controller
             'nombre'    => 'required|string|max:50',
             'apellido1' => 'required|string|max:50',
             'apellido2' => 'nullable|string|max:50',
+            'fecha_nac' => 'nullable|date',
             'dni' => [
                 'required',
                 'string',
@@ -61,6 +62,7 @@ class PacienteController extends Controller
                     'nombre'    => $request->nombre,
                     'apellido1' => $request->apellido1,
                     'apellido2' => $request->apellido2,
+                    'fecha_nac' => $request->fecha_nac,
                     'dni'       => $request->dni,
                     'telf'      => $request->telf,
                     'email'     => $request->email,
@@ -91,6 +93,7 @@ class PacienteController extends Controller
             'nombre'    => 'sometimes|string|max:50',
             'apellido1' => 'sometimes|string|max:50',
             'apellido2' => 'sometimes|nullable|string|max:50',
+            'fecha_nac' => 'sometimes|nullable|date',
             'dni' => [
                 'sometimes',
                 'string',
@@ -108,7 +111,10 @@ class PacienteController extends Controller
             'direccion' => 'sometimes|nullable|string|max:100',
         ]);
 
-        $paciente->update($request->all());
+        //$paciente->update($request->all());
+        $paciente->update($request->only([
+            'nombre', 'apellido1', 'apellido2', 'fecha_nac', 'dni', 'telf', 'email', 'direccion'
+            ]));
 
         return response()->json($paciente->load('hc'));
     }

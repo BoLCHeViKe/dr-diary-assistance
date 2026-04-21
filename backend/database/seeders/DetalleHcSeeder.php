@@ -7,16 +7,19 @@ class DetalleHcSeeder extends Seeder
 {
     public function run(): void
     {
+        //Coge la primera hc
+        $primerNhc = DB::table('hc')->first()->nhc;
+
         DB::table('detallehc')->insert([
             [
-                'nhc' => 2000, 
+                'nhc' => $primerNhc, 
                 'f_consulta' => '2025-01-20', 
                 'sinto' => 'Fatiga y cansancio', 
                 'diag' => 'HTA inicial', 
                 'tto' => 'Dieta hiposódica'
             ],
             [
-                'nhc' => 2001, 
+                'nhc' => $primerNhc+1, 
                 'f_consulta' => '2025-01-22', 
                 'sinto' => 'Mancha en región dorsal', 
                 'diag' => 'Nevus benigno', 

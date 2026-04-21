@@ -20,6 +20,11 @@ return new class extends Migration
             $table->string('nombre', 30);
             $table->string('apellido1', 30);
             $table->string('apellido2', 30);
+
+            //Datos adicionales
+            $table->date('fecha_nac')->nullable();
+            $table->string('telf', 13)->nullable();
+            $table->string('direccion', 100)->nullable();
             
             // Rol (Relación con tu tabla rol)
             $table->unsignedBigInteger('id_rol')->default(2);

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->date('fecha_nac')->nullable();
             $table->string('telf', 13)->nullable();
             $table->string('email', 64)->unique()->nullable(); // Añadimos email por si el dia de mañana queremos emails con pdf
+            $table->string('direccion', 100)->nullable();
             $table->unsignedBigInteger('nhc');
 
 

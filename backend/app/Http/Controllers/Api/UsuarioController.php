@@ -46,6 +46,9 @@ class UsuarioController extends Controller
                             'unique:users,dni',
                             'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
                         ],
+            'fecha_nac' => 'sometimes|nullable|date',
+            'telf'      => 'sometimes|nullable|string|max:15',
+            'direccion' => 'sometimes|nullable|string|max:100',
             'id_rol'    => 'required|exists:rol,id',
             'num_col'   => 'required_if:id_rol,2|string|max:10',
             'num_auto'  => 'required_if:id_rol,1|string|max:10',
@@ -60,6 +63,9 @@ class UsuarioController extends Controller
                     'email'     => $request->email,
                     'password'  => $request->password, // el cast del modelo lo hashea
                     'dni'       => $request->dni,
+                    'fecha_nac' => $request->fecha_nac,
+                    'telf'      => $request->telf,
+                    'direccion' => $request->direccion,
                     'id_rol'    => $request->id_rol,
                 ]);
 
@@ -110,6 +116,9 @@ class UsuarioController extends Controller
                 Rule::unique('users', 'dni')->ignore($id),
                 'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
             ],
+            'fecha_nac' => 'sometimes|nullable|date',
+            'telf'      => 'sometimes|nullable|string|max:15',
+            'direccion' => 'sometimes|nullable|string|max:100',
             'num_col'   => 'sometimes|string|max:10',
             'num_auto'  => 'sometimes|string|max:10',
         ]);
@@ -117,7 +126,7 @@ class UsuarioController extends Controller
         try {
             DB::transaction(function () use ($request, $user) {
                 $user->update($request->only([
-                    'nombre', 'apellido1', 'apellido2', 'email', 'dni'
+                    'nombre', 'apellido1', 'apellido2', 'email', 'dni', 'fecha_nac','telf','direccion'
                 ]));
 
                 if ($request->has('password')) {

@@ -7,10 +7,11 @@ class HcSeeder extends Seeder
 {
     public function run(): void
     {
-        for ($i = 0; $i <= 14; $i++) {
+        for ($i = 0; $i <5; $i++) { //Tenemos moqueados 5 pacientes, pues 5 HC
             DB::table('hc')->insert([
-                'nhc' => 2000 + $i,
+                'nhc' => 1000 + $i,
                 'fecha_apert' => '2024-01-01'
+                //'fecha_apert' => now()->toDateString()
             ]);
         }
     }
