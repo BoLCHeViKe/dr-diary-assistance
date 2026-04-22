@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\UsuarioController;
 use App\Http\Controllers\Api\PacienteController;
+use App\Http\Controllers\Api\EspecialidadController;
+use App\Http\Controllers\Api\PrestacionController;
+use App\Http\Controllers\Api\MedicoController;
+use App\Http\Controllers\Api\AgendaController;
+use App\Http\Controllers\Api\CitaController;
 use App\Http\Controllers\Api\FacturaController;
 
 /*
@@ -55,6 +60,53 @@ use App\Http\Controllers\Api\FacturaController;
         Route::put('/{id}', [PacienteController::class, 'update']);
         Route::delete('/{id}', [PacienteController::class, 'destroy']);
     });
+    // Agrupamos las rutas de ESPECIALIDADES
+    Route::prefix('especialidades')->group(function () {
+        Route::get('/', [EspecialidadController::class, 'index']);
+        Route::get('/{codigo_esp}', [EspecialidadController::class, 'show']);
+        Route::post('/', [EspecialidadController::class, 'store']);
+        Route::put('/{codigo_esp}', [EspecialidadController::class, 'update']);
+        Route::delete('/{codigo_esp}', [EspecialidadController::class, 'destroy']);
+    });
+    // Agrupamos las rutas de PRESTACION
+    Route::prefix('prestaciones')->group(function () {
+        Route::get('/', [PrestacionController::class, 'index']);
+        Route::get('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'show']);
+        Route::post('/', [PrestacionController::class, 'store']);
+        Route::put('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'update']);
+        Route::delete('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'destroy']);
+    });
+    // Agrupamos las rutas de MEDICO
+    //POST médico   → se hace desde UsuarioController::store() con id_rol=2
+    //DELETE médico → se hace desde UsuarioController::destroy()
+    Route::prefix('medicos')->group(function () {
+        Route::get('/', [MedicoController::class, 'index']);
+        Route::get('/{id}', [MedicoController::class, 'show']);
+        Route::put('/{id}', [MedicoController::class, 'update']);
+    });
+    // Agrupamos las rutas de AGENDA (OJO, depende de medico)
+    Route::prefix('medicos/{id_medico}/agendas')->group(function () {
+        Route::get('/', [AgendaController::class, 'index']);
+        Route::get('/{id_agenda}', [AgendaController::class, 'show']);
+        Route::post('/', [AgendaController::class, 'store']);
+        Route::put('/{id_agenda}', [AgendaController::class, 'update']);
+        Route::delete('/{id_agenda}', [AgendaController::class, 'destroy']);
+    });
+
+
+    // Rutas de Citas (Basado en mi Agenda)
+    Route::prefix('agendas/{id_agenda}/citas')->group(function () {
+        Route::get('/', [CitaController::class, 'index']);
+        Route::post('/', [CitaController::class, 'store']);
+        Route::get('/{id_cita}', [CitaController::class, 'show']);
+        Route::put('/{id_cita}', [CitaController::class, 'update']);
+        Route::delete('/{id_cita}', [CitaController::class, 'destroy']);
+    });
+
+    // Consultas Híbridas (Historiales y Paneles)
+    Route::get('pacientes/{id_paciente}/citas', [CitaController::class, 'citasPorPaciente']);
+    Route::get('medicos/{id_medico}/citas', [CitaController::class, 'citasPorMedico']);
+
 
     // Agrupamos las rutas de FACTURAS
     Route::prefix('facturas')->group(function () { //Con el prefix hacemos que sea mas eficiente

@@ -17,6 +17,7 @@ class Cita extends Model
         'id_prest',
         'id_paciente'
     ];
+    protected $appends = ['prestacion']; //Nos daba problemas en pintar las citas
 
     public function agenda()
     {
@@ -27,5 +28,10 @@ class Cita extends Model
     {
         return $this->belongsTo(Paciente::class, 'id_paciente', 'id_paciente');
     }
-
+    public function getPrestacionAttribute()
+    {
+        return Prestacion::where('codigo_esp', $this->codigo_esp)
+                         ->where('id_prest', $this->id_prest)
+                         ->first();
+    }
 }
