@@ -4,10 +4,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\UsuarioController;
+use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\MedicoController;
 use App\Http\Controllers\Api\PacienteController;
 use App\Http\Controllers\Api\EspecialidadController;
 use App\Http\Controllers\Api\PrestacionController;
-use App\Http\Controllers\Api\MedicoController;
 use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\CitaController;
 use App\Http\Controllers\Api\FacturaController;
@@ -34,6 +35,15 @@ use App\Http\Controllers\Api\FacturaController;
         return $request->user()->load('rol');
     });
 
+    // Agrupamos las rutas de ROLES
+    Route::prefix('roles')->group(function () {
+        Route::get('/', [RolController::class, 'index']);
+        Route::get('/{id}', [RolController::class, 'show']);
+        Route::post('/', [RolController::class, 'store']);
+        Route::put('/{id}', [RolController::class, 'update']);
+        Route::delete('/{id}', [RolController::class, 'destroy']);
+    });
+
     // 2. Gestión de Usuarios: SOLO accesible si ya estás logueado como Admin
     Route::prefix('usuarios')->group(function () {
         Route::get('/', [UsuarioController::class, 'index']);
@@ -43,14 +53,24 @@ use App\Http\Controllers\Api\FacturaController;
         Route::delete('/{id}', [UsuarioController::class, 'destroy']);
     });
 
-    // Agrupamos las rutas de ROLES
-    Route::prefix('roles')->group(function () {
-        Route::get('/', [RolController::class, 'index']);
-        Route::get('/{id}', [RolController::class, 'show']);
-        Route::post('/', [RolController::class, 'store']);
-        Route::put('/{id}', [RolController::class, 'update']);
-        Route::delete('/{id}', [RolController::class, 'destroy']);
+    //Agrupamos las rutas de ADMINs
+    //POST   /api/usuarios    → crear admin (con id_rol=1, num_auto)
+    //DELETE /api/usuarios/{id} → eliminar admin
+    Route::prefix('admins')->group(function () {
+        Route::get('/', [AdminController::class, 'index']);
+        Route::get('/{id}', [AdminController::class, 'show']);
+        Route::put('/{id}', [AdminController::class, 'update']);
     });
+
+    //Agrupamos las rutas de MEDICO
+    //POST médico   → se hace desde UsuarioController::store() con id_rol=2
+    //DELETE médico → se hace desde UsuarioController::destroy()
+    Route::prefix('medicos')->group(function () {
+        Route::get('/', [MedicoController::class, 'index']);
+        Route::get('/{id}', [MedicoController::class, 'show']);
+        Route::put('/{id}', [MedicoController::class, 'update']);
+    });
+
 
     // Agrupamos las rutas de PACIENTES
     Route::prefix('pacientes')->group(function () {
@@ -76,14 +96,7 @@ use App\Http\Controllers\Api\FacturaController;
         Route::put('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'update']);
         Route::delete('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'destroy']);
     });
-    // Agrupamos las rutas de MEDICO
-    //POST médico   → se hace desde UsuarioController::store() con id_rol=2
-    //DELETE médico → se hace desde UsuarioController::destroy()
-    Route::prefix('medicos')->group(function () {
-        Route::get('/', [MedicoController::class, 'index']);
-        Route::get('/{id}', [MedicoController::class, 'show']);
-        Route::put('/{id}', [MedicoController::class, 'update']);
-    });
+
     // Agrupamos las rutas de AGENDA (OJO, depende de medico)
     Route::prefix('medicos/{id_medico}/agendas')->group(function () {
         Route::get('/', [AgendaController::class, 'index']);
