@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\CitaController;
 use App\Http\Controllers\Api\HcController;
 use App\Http\Controllers\Api\DetalleHcController;
 use App\Http\Controllers\Api\FacturaController;
+use App\Http\Controllers\Api\LineaFacturaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -149,6 +150,15 @@ use App\Http\Controllers\Api\FacturaController;
         Route::delete('/{num_fact}', [FacturaController::class, 'destroy']);
         // Ruta especial para abonos
         Route::post('/{num_fact}/abono', [FacturaController::class, 'crearAbono']);
+    });
+
+
+    Route::prefix('facturas/{num_fact}/lineas')->group(function () {
+        Route::get('/', [LineaFacturaController::class, 'index']);
+        Route::post('/', [LineaFacturaController::class, 'store']);
+        Route::get('/{num_linea}', [LineaFacturaController::class, 'show']);
+        Route::put('/{num_linea}', [LineaFacturaController::class, 'update']);
+        Route::delete('/{num_linea}', [LineaFacturaController::class, 'destroy']);
     });
 
 // });

@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Prestacion;
 
 class LineaFactura extends Model
 {
@@ -9,6 +10,7 @@ class LineaFactura extends Model
 
     protected $primaryKey = ['num_linea', 'num_fact'];
     public $incrementing = false;
+    protected $appends = ['prestacion'];
 
     protected $fillable = [
         'num_fact',
@@ -24,6 +26,12 @@ class LineaFactura extends Model
     {
         return $this->belongsTo(Factura::class, 'num_fact', 'num_fact');
     }
+    public function getPrestacionAttribute()
+    {
+        return Prestacion::where('codigo_esp', $this->codigo_esp)
+                        ->where('id_prest', $this->id_prest)
+                        ->first();
+    }    
 
 
 }
