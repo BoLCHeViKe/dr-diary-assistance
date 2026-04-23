@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\EspecialidadController;
 use App\Http\Controllers\Api\PrestacionController;
 use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\CitaController;
+use App\Http\Controllers\Api\HcController;
+use App\Http\Controllers\Api\DetalleHcController;
 use App\Http\Controllers\Api\FacturaController;
 
 /*
@@ -120,6 +122,23 @@ use App\Http\Controllers\Api\FacturaController;
     Route::get('pacientes/{id_paciente}/citas', [CitaController::class, 'citasPorPaciente']);
     Route::get('medicos/{id_medico}/citas', [CitaController::class, 'citasPorMedico']);
 
+    // Agrupamos las rutas de HISTORIAS CLINICAS
+    //store()   → lo hace PacienteController automáticamente
+    //update()  → la HC no se edita, es un registro médico
+    //destroy() → lo hace PacienteController automáticamente
+    Route::prefix('hc')->group(function () {
+        Route::get('/', [HcController::class, 'index']);
+        Route::get('/{nhc}', [HcController::class, 'show']);
+    });
+
+    // Agrupamos las rutas de DETALLE HC
+    Route::prefix('hc/{nhc}/detalles')->group(function () {
+        Route::get('/', [DetalleHcController::class, 'index']);
+        Route::get('/{num_orden}', [DetalleHcController::class, 'show']);
+        Route::post('/', [DetalleHcController::class, 'store']);
+        Route::put('/{num_orden}', [DetalleHcController::class, 'update']);
+        Route::delete('/{num_orden}', [DetalleHcController::class, 'destroy']);
+    });
 
     // Agrupamos las rutas de FACTURAS
     Route::prefix('facturas')->group(function () { //Con el prefix hacemos que sea mas eficiente

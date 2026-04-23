@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
             PrestacionSeeder::class,
             HcSeeder::class,
             PacienteSeeder::class,
-            DetalleHcSeeder::class,
             AgendaSeeder::class,
             CitaSeeder::class,
+            DetalleHcSeeder::class,
             FacturaSeeder::class,
             LineaFacturaSeeder::class,
         ]);

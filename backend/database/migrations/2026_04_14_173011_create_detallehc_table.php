@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('detallehc', function (Blueprint $table) {
             $table->integer('num_orden');
             $table->unsignedBigInteger('nhc');
+            $table->unsignedBigInteger('id_cita')->unique()->nullable();
             $table->string('tto', 60);
             $table->date('f_consulta')->default('1900-01-01');
             $table->text('sinto')->nullable();
@@ -22,6 +23,8 @@ return new class extends Migration
                   ->on('hc')
                   ->onDelete('cascade')
                   ->onUpdate('cascade');
+
+            $table->foreign('id_cita')->references('id_cita')->on('cita')->onDelete('set null')->onUpdate('cascade');
         });
     }
 

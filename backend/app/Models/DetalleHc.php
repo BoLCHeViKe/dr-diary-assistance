@@ -10,7 +10,9 @@ class DetalleHc extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'num_orden',// Lo añadimos por si acaso, aunque lo gestione el trigger
         'nhc',
+        'id_cita',// <-- ¡FUNDAMENTAL añadirlo aquí!
         'tto',
         'f_consulta',
         'sinto',
@@ -21,4 +23,9 @@ class DetalleHc extends Model
     {
         return $this->belongsTo(Hc::class, 'nhc', 'nhc');
     }
+    public function cita()
+    {
+        return $this->belongsTo(Cita::class, 'id_cita', 'id_cita');
+    }
+
 }
