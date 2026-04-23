@@ -80,11 +80,22 @@ class FacturaController extends Controller
         }
 
         $request->validate([
-            'estado' => 'required|in:borrador,emitida,anulada'
+            'estado' => 'sometimes|in:borrador,emitida,anulada,abono',
+            'fecha'  => 'sometimes|date',
         ]);
 
+        // Protección: solo se puede cambiar la fecha en borrador
+        if ($request->has('fecha') && $factura->estado !== 'borrador') {
+            return response()->json([
+                'error'   => 'Fecha bloqueada',
+                'message' => 'Solo se puede cambiar la fecha en facturas en estado borrador.'
+            ], 422);
+        }
+
         try {
-            $factura->estado = $request->estado;
+            if ($request->has('fecha'))  $factura->fecha  = $request->fecha;
+            if ($request->has('estado')) $factura->estado = $request->estado;
+
             $factura->save();
 
             return response()->json($factura->load(['lineas', 'paciente']));
