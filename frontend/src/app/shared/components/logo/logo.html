@@ -1,0 +1,45 @@
+<div class="dda-logo" [class.dda-logo--sm]="size === 'sm'">
+
+  <!-- ── SVG: círculo + fonendoscopio ─────────────────────── -->
+  <svg class="logo-circle" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Outer ring -->
+    <circle cx="50" cy="50" r="47" fill="none" stroke="#5FD0E7" stroke-width="2.8"/>
+    <!-- Inner subtle halo -->
+    <circle cx="50" cy="50" r="44" fill="#e4f8fe" opacity="0.35"/>
+
+    <!-- Earpieces (dots) -->
+    <circle cx="25" cy="17" r="5.5" fill="#04078B"/>
+    <circle cx="75" cy="17" r="5.5" fill="#04078B"/>
+
+    <!-- Left earpiece → Y junction -->
+    <line x1="25" y1="22" x2="43" y2="47" stroke="#0359C9" stroke-width="4" stroke-linecap="round"/>
+    <!-- Right earpiece → Y junction -->
+    <line x1="75" y1="22" x2="57" y2="47" stroke="#0359C9" stroke-width="4" stroke-linecap="round"/>
+    <!-- Y junction horizontal connector -->
+    <line x1="43" y1="47" x2="57" y2="47" stroke="#0359C9" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Main tube: Y junction → curves down → chest piece connection -->
+    <path d="M50 47 Q50 66 62 73 Q73 80 74 89"
+          stroke="#0359C9" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- Chest piece: layered circles -->
+    <circle cx="73" cy="91" r="9"  fill="#ADE8F4" stroke="#00B8F5" stroke-width="2"/>
+    <circle cx="73" cy="91" r="5"  fill="none"    stroke="#5FD0E7" stroke-width="1.5"/>
+    <circle cx="73" cy="91" r="2"  fill="#0AD6FF"/>
+
+  </svg>
+
+  <!-- ── Texto: Dr. Diary / Assistance + ECG ──────────────── -->
+  <div class="logo-text">
+    <div class="logo-dr">Dr. Diary</div>
+    <div class="logo-assist">Assistance</div>
+
+    <!-- ECG heartbeat line -->
+    <svg class="logo-ecg" viewBox="0 0 200 22" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0 11 L65 11 L73 4 L82 19 L91 4 L100 11 L200 11"
+            stroke="#0AD6FF" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+</div>

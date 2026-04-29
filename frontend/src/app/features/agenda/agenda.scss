@@ -1,0 +1,365 @@
+// ── Page container ────────────────────────────────────────────────────────────
+.agenda-page {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+// ── Date navigation bar ───────────────────────────────────────────────────────
+.agenda-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 8px rgba(4, 7, 139, 0.07);
+}
+
+.btn-nav {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.agenda-date-center {
+  flex: 1;
+  text-align: center;
+}
+
+.agenda-date-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #04078B;
+  text-transform: capitalize;
+  line-height: 1.2;
+}
+
+.agenda-date-input {
+  max-width: 160px;
+  margin: 0.25rem auto 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+  border-color: #e2e8f0;
+  border-radius: 0.4rem;
+  display: block;
+
+  &:focus {
+    border-color: #0092E0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 146, 224, 0.2);
+  }
+}
+
+// ── No agenda empty state ─────────────────────────────────────────────────────
+.no-agenda-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 24px rgba(4, 7, 139, 0.07);
+}
+
+.no-agenda-icon {
+  display: block;
+  font-size: 3.5rem;
+  color: #d1dae4;
+  margin-bottom: 0.75rem;
+}
+
+// ── Agenda info bar ───────────────────────────────────────────────────────────
+.agenda-info-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  box-shadow: 0 2px 8px rgba(4, 7, 139, 0.06);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.info-sep {
+  color: #c8d0d8;
+}
+
+// ── Slot list ─────────────────────────────────────────────────────────────────
+.slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  .slot-time {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #04078B;
+    min-width: 42px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slot-arrow {
+    color: #c8d0d8;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  // Free slot
+  &--free {
+    background: #fff;
+    border: 1.5px dashed #d1dae4;
+
+    &:hover {
+      border-color: #0092E0;
+      background: #f0f9ff;
+
+      .slot-libre { color: #0092E0; }
+      .slot-add-icon { color: #0092E0; }
+    }
+
+    .slot-libre {
+      color: #a0aec0;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .slot-add-icon {
+      color: #c8d0d8;
+      font-size: 1rem;
+    }
+  }
+
+  // Occupied slot
+  &--occupied {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(4, 7, 139, 0.08);
+    border: 1.5px solid transparent;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(4, 7, 139, 0.14);
+      border-color: #e2eef8;
+      transform: translateY(-1px);
+    }
+
+    .slot-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .slot-patient {
+      display: block;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #2d3a4a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slot-prest {
+      display: block;
+      font-size: 0.78rem;
+      color: #90a0b7;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slot-badge {
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+  }
+}
+
+// ── Estado badge colors ───────────────────────────────────────────────────────
+.estado-citado    { background: #00B8F5; color: #fff; }
+.estado-en-espera { background: #f0a500; color: #fff; }
+.estado-validado  { background: #28a745; color: #fff; }
+.estado-facturado { background: #04078B; color: #fff; }
+
+// ── Side panel ────────────────────────────────────────────────────────────────
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 139, 0.3);
+  z-index: 1040;
+  animation: fadeIn 0.2s ease;
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  background: #fff;
+  z-index: 1050;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(4, 7, 139, 0.18);
+  animation: slideIn 0.25s ease;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(90deg, #04078B 0%, #0359C9 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.panel-body {
+  padding: 1.5rem 1.25rem;
+  flex: 1;
+
+  .form-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.875rem;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+// ── Patient autocomplete ──────────────────────────────────────────────────────
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  background: #fff;
+  border: 1px solid #d1dae4;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.1s;
+
+  &:hover { background: #f0f9ff; }
+}
+
+.patient-ok {
+  font-size: 0.8rem;
+  color: #2d3a4a;
+  font-weight: 600;
+}
+
+// ── Cita detail ───────────────────────────────────────────────────────────────
+.cita-detail {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cita-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.cita-icon {
+  color: #0092E0;
+  font-size: 1rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+// ── Estado buttons ────────────────────────────────────────────────────────────
+.label-section {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #90a0b7;
+  margin-bottom: 0.6rem;
+}
+
+.estado-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.estado-btn {
+  opacity: 0.45;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.5rem;
+  border: 2px solid transparent;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.8;
+  }
+
+  &.active {
+    opacity: 1;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 0 0 5px currentColor;
+  }
+
+  &:disabled { cursor: not-allowed; }
+}
+
+// ── Mobile adjustments ────────────────────────────────────────────────────────
+@media (max-width: 575.98px) {
+  .agenda-header {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .agenda-date-center {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .side-panel {
+    width: 100vw;
+  }
+}

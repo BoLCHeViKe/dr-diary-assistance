@@ -1,0 +1,263 @@
+// ─── Google Fonts ─────────────────────────────────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
+
+// ─── DDA Color palette ────────────────────────────────────────────────────────
+$dda-navy:     #04078B;
+$dda-blue:     #0359C9;
+$dda-med-blue: #0092E0;
+$dda-light:    #00B8F5;
+$dda-cyan:     #0AD6FF;
+$dda-pale:     #5FD0E7;
+$dda-lighter:  #90E0EF;
+$dda-palest:   #ADE8F4;
+
+// ─── Bootstrap variable overrides ─────────────────────────────────────────────
+$primary:        $dda-med-blue;
+$dark:           $dda-navy;
+$info:           $dda-cyan;
+$link-color:     $dda-blue;
+
+$font-family-sans-serif: 'Nunito', sans-serif;
+$font-size-base:  0.95rem;
+$border-radius:   0.5rem;
+$border-radius-lg: 0.75rem;
+
+$navbar-dark-color:         rgba(255, 255, 255, 0.85);
+$navbar-dark-hover-color:   #ffffff;
+$navbar-dark-active-color:  #ffffff;
+
+$btn-border-radius:    2rem;
+$btn-padding-x:        1.75rem;
+$btn-padding-y:        0.65rem;
+$btn-font-weight:      600;
+
+$input-border-radius:  0.5rem;
+
+// ─── Bootstrap SCSS (sass-migrator: @use not compatible with Bootstrap 5 variable overrides)
+// stylelint-disable-next-line scss/at-import-no-partial-leading-underscore
+/* stylelint-disable */
+// sass-lint:disable no-css-comments
+// Bootstrap requires @import for variable overrides; @use migration pending Bootstrap 6
+@import 'bootstrap/scss/bootstrap'; // sass-deprecation: will migrate to @use in Bootstrap 6
+@import 'bootstrap-icons/font/bootstrap-icons'; // sass-deprecation: same as above
+/* stylelint-enable */
+
+// ─── Global styles ────────────────────────────────────────────────────────────
+html, body {
+  height: 100%;
+  font-family: 'Nunito', sans-serif;
+  background-color: #f4f6fb;
+  color: #2d3a4a;
+}
+
+// Navbar
+.navbar-dda {
+  background: linear-gradient(90deg, $dda-navy 0%, $dda-blue 100%);
+  box-shadow: 0 2px 10px rgba(4, 7, 139, 0.25);
+
+  .navbar-brand img {
+    height: 38px;
+  }
+
+  .nav-link {
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.4rem;
+    transition: background 0.2s ease, color 0.2s ease;
+
+    &.active, &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff !important;
+    }
+  }
+
+  .nav-icon-btn {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.4rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+  }
+}
+
+// Mobile navbar: brand centered, collapse as narrow floating menu
+@media (max-width: 991.98px) {
+  .navbar-dda {
+    .navbar-brand {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      pointer-events: auto;
+    }
+
+    .navbar-collapse {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: fit-content;
+      min-width: 185px;
+      background: linear-gradient(160deg, $dda-navy 0%, $dda-blue 100%);
+      border-radius: 0 0 0.75rem 0;
+      padding: 0.25rem 0 0.5rem;
+      z-index: 1050;
+      box-shadow: 4px 6px 20px rgba(0, 0, 0, 0.3);
+
+      .nav-link {
+        white-space: nowrap;
+        padding: 0.5rem 1.25rem;
+      }
+
+      button.nav-link {
+        color: rgba(255, 255, 255, 0.85);
+        &:hover { color: #fff; }
+      }
+    }
+  }
+}
+
+// Main layout
+.main-content {
+  min-height: calc(100vh - 66px - 34px);
+  padding: 1.5rem 1rem 3.5rem;
+}
+
+// Footer bar
+.footer-bar {
+  background: linear-gradient(90deg, $dda-navy 0%, $dda-blue 100%);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+// Cards
+.card-dda {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(4, 7, 139, 0.08);
+}
+
+// Home action buttons
+.btn-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 340px;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 146, 224, 0.35);
+  }
+
+  i { font-size: 1.3rem; }
+}
+
+// Appointment state badges
+.badge-citado    { background-color: $dda-light;  color: #fff; }
+.badge-espera    { background-color: #f0a500;      color: #fff; }
+.badge-validado  { background-color: #28a745;      color: #fff; }
+.badge-facturado { background-color: $dda-navy;    color: #fff; }
+
+// Login
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, $dda-navy 0%, $dda-blue 50%, $dda-med-blue 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 60px rgba(4, 7, 139, 0.35);
+  padding: 2.5rem 2rem;
+  background: #fff;
+
+  .login-logo {
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $dda-navy;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.875rem;
+  }
+
+  .form-control {
+    padding: 0.65rem 1rem;
+    border-color: #d1dae4;
+
+    &:focus {
+      border-color: $dda-med-blue;
+      box-shadow: 0 0 0 0.2rem rgba(0, 146, 224, 0.2);
+    }
+  }
+
+  .btn-conectar {
+    background: linear-gradient(90deg, $dda-med-blue, $dda-cyan);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    font-size: 1rem;
+
+    &:hover {
+      background: linear-gradient(90deg, $dda-blue, $dda-med-blue);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 146, 224, 0.4);
+    }
+  }
+
+  .link-forgot {
+    color: $dda-blue;
+    font-size: 0.85rem;
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.login-legal {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  max-width: 500px;
+  padding: 0 1rem;
+}

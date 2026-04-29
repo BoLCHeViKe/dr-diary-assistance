@@ -1,0 +1,81 @@
+<div class="login-page">
+
+  <div class="login-card">
+
+    <!-- Logo -->
+    <div class="d-flex justify-content-center mb-4">
+      <img src="/images/logo-drdiary.png" alt="Dr. Diary Assistance" class="login-logo">
+    </div>
+
+    <!-- Error alert -->
+    @if (error()) {
+      <div class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Form -->
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+      <div class="mb-3">
+        <label class="form-label" for="email">Usuario (email)</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input id="email" type="email" class="form-control"
+                 [class.is-invalid]="invalid('email')"
+                 formControlName="email"
+                 placeholder="correo@ejemplo.com"
+                 autocomplete="username">
+          @if (invalid('email')) {
+            <div class="invalid-feedback">Introduce un email válido.</div>
+          }
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="password">Contraseña</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input id="password" [type]="showPwd() ? 'text' : 'password'"
+                 class="form-control"
+                 [class.is-invalid]="invalid('password')"
+                 formControlName="password"
+                 placeholder="Contraseña"
+                 autocomplete="current-password">
+          <button type="button" class="input-group-text border-start-0"
+                  (click)="showPwd.set(!showPwd())" title="Mostrar/ocultar">
+            <i class="bi" [class.bi-eye]="!showPwd()" [class.bi-eye-slash]="showPwd()"></i>
+          </button>
+          @if (invalid('password')) {
+            <div class="invalid-feedback">La contraseña es obligatoria.</div>
+          }
+        </div>
+      </div>
+
+      <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-conectar"
+                [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          } @else {
+            <i class="bi bi-box-arrow-in-right me-2"></i>
+          }
+          CONECTAR
+        </button>
+      </div>
+
+      <div class="text-center">
+        <a href="#" class="link-forgot">¿No recuerda su contraseña? Pulse aquí</a>
+      </div>
+
+    </form>
+  </div>
+
+  <p class="login-legal">
+    <i class="bi bi-shield-lock me-1"></i>
+    Aviso legal: Podrá ejercer sus derechos en nuestra web o en la dirección de correo electrónico.
+    Acceso restringido a personal autorizado.
+  </p>
+
+</div>

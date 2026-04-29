@@ -1,0 +1,302 @@
+<div class="agenda-page">
+
+  <!-- ── Date navigation ─────────────────────────────────────────────────── -->
+  <div class="agenda-header mb-3">
+
+    <button class="btn btn-outline-primary btn-nav" (click)="prevDay()" title="Día anterior">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+
+    <div class="agenda-date-center">
+      <div class="agenda-date-label">{{ dateLong() }}</div>
+      <input type="date" class="form-control form-control-sm agenda-date-input"
+             [value]="dateStr()" (change)="onDateChange($event)">
+    </div>
+
+    <button class="btn btn-sm btn-outline-secondary" (click)="goToday()">Hoy</button>
+
+    <button class="btn btn-outline-primary btn-nav" (click)="nextDay()" title="Día siguiente">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+
+  </div>
+
+  <!-- ── Error ───────────────────────────────────────────────────────────── -->
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="flex-grow-1">{{ error() }}</span>
+      <button type="button" class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+  }
+
+  <!-- ── No agenda ───────────────────────────────────────────────────────── -->
+  @if (!loading() && !agenda()) {
+    <div class="no-agenda-card text-center">
+      <i class="bi bi-calendar-x no-agenda-icon"></i>
+      <p class="fw-semibold mb-1">No hay agenda para este día</p>
+      <p class="text-muted small mb-4">Crea una agenda para configurar los huecos disponibles</p>
+      <button class="btn btn-primary" (click)="openPanel('create-agenda')">
+        <i class="bi bi-plus-circle me-2"></i>Crear agenda
+      </button>
+    </div>
+  }
+
+  <!-- ── Agenda info bar ─────────────────────────────────────────────────── -->
+  @if (!loading() && agenda()) {
+    <div class="agenda-info-bar mb-3">
+      <i class="bi bi-clock text-primary"></i>
+      <span>{{ fmt(agenda()!.h_inicio) }} – {{ fmt(agenda()!.h_fin) }}</span>
+      <span class="info-sep">·</span>
+      <span>{{ agenda()!.min_intervalo }} min/cita</span>
+      <span class="info-sep">·</span>
+      <span class="text-success fw-semibold">{{ freeSlotsCount() }} libre{{ freeSlotsCount() !== 1 ? 's' : '' }}</span>
+      <span class="info-sep">·</span>
+      <span>{{ slots().length }} huecos</span>
+      <button class="btn btn-sm btn-outline-danger ms-auto" title="Eliminar agenda del día"
+              (click)="confirmDeleteAgenda()">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  }
+
+  <!-- ── Slot list ───────────────────────────────────────────────────────── -->
+  @if (!loading() && agenda()) {
+    <div class="slots-list">
+      @for (slot of slots(); track slot) {
+
+        @if (slotMap().get(slot); as cita) {
+          <!-- Occupied slot -->
+          <div class="slot slot--occupied" (click)="openCita(cita)">
+            <span class="slot-time">{{ slot }}</span>
+            <div class="slot-body">
+              <span class="slot-patient">
+                {{ cita.paciente?.nombre }} {{ cita.paciente?.apellido1 }}
+              </span>
+              @if (cita.prestacion) {
+                <span class="slot-prest">{{ cita.prestacion.nombre }}</span>
+              }
+            </div>
+            <span class="badge rounded-pill slot-badge {{ estadoClass(cita.estado) }}">{{ cita.estado }}</span>
+            <i class="bi bi-chevron-right slot-arrow"></i>
+          </div>
+
+        } @else {
+          <!-- Free slot -->
+          <div class="slot slot--free" (click)="openNewCita(slot)">
+            <span class="slot-time">{{ slot }}</span>
+            <span class="slot-libre">Libre</span>
+            <i class="bi bi-plus-circle ms-auto slot-add-icon"></i>
+          </div>
+        }
+
+      }
+    </div>
+  }
+
+  <!-- ── Side panel ──────────────────────────────────────────────────────── -->
+  @if (panelMode()) {
+    <div class="panel-backdrop" (click)="closePanel()"></div>
+
+    <div class="side-panel">
+
+      <!-- Panel header -->
+      <div class="panel-header">
+        @if (panelMode() === 'create-agenda') { <span>Nueva agenda</span> }
+        @if (panelMode() === 'create-cita')   { <span>Nueva cita · <strong>{{ selectedSlot() }}</strong></span> }
+        @if (panelMode() === 'view-cita')     { <span>Cita · <strong>{{ fmt(selectedCita()!.h_cita) }}</strong></span> }
+        <button type="button" class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
+      </div>
+
+      <!-- ── CREATE AGENDA form ─────────────────────────────────────── -->
+      @if (panelMode() === 'create-agenda') {
+        <form [formGroup]="agendaForm" (ngSubmit)="submitCreateAgenda()" class="panel-body">
+
+          <p class="text-muted small mb-4">{{ dateLong() }}</p>
+
+          <div class="mb-3">
+            <label class="form-label">Hora inicio</label>
+            <input type="time" class="form-control" formControlName="h_inicio"
+                   [class.is-invalid]="agendaForm.get('h_inicio')!.invalid && agendaForm.get('h_inicio')!.touched">
+            <div class="invalid-feedback">Obligatorio</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Hora fin</label>
+            <input type="time" class="form-control" formControlName="h_fin"
+                   [class.is-invalid]="agendaForm.get('h_fin')!.invalid && agendaForm.get('h_fin')!.touched">
+            <div class="invalid-feedback">Obligatorio</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Duración por cita</label>
+            <select class="form-select" formControlName="min_intervalo">
+              @for (min of INTERVALOS; track min) {
+                <option [value]="min">{{ min }} minutos</option>
+              }
+            </select>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary" [disabled]="savingAgenda()">
+              @if (savingAgenda()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Crear agenda
+            </button>
+          </div>
+
+        </form>
+      }
+
+      <!-- ── CREATE CITA form ───────────────────────────────────────── -->
+      @if (panelMode() === 'create-cita') {
+        <form [formGroup]="citaForm" (ngSubmit)="submitCreateCita()" class="panel-body">
+
+          <!-- Paciente -->
+          <div class="mb-3">
+            <label class="form-label">Paciente</label>
+            <div class="position-relative">
+              <input type="text" class="form-control"
+                     placeholder="Buscar por nombre o DNI…"
+                     [value]="patientQuery()"
+                     (input)="onPatientInput($event)"
+                     autocomplete="off">
+
+              @if (showPatientDropdown() && filteredPacientes().length > 0) {
+                <ul class="autocomplete-list">
+                  @for (p of filteredPacientes(); track p.id_paciente) {
+                    <li class="autocomplete-item" (mousedown)="selectPatient(p)">
+                      <span class="fw-semibold">{{ p.nombre }} {{ p.apellido1 }}</span>
+                      <span class="text-muted small ms-2">{{ p.dni }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+            @if (selectedPatient()) {
+              <div class="patient-ok mt-1">
+                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                {{ selectedPatient()!.nombre }} {{ selectedPatient()!.apellido1 }} · {{ selectedPatient()!.dni }}
+              </div>
+            }
+          </div>
+
+          <!-- Especialidad -->
+          <div class="mb-3">
+            <label class="form-label">Especialidad</label>
+            <select class="form-select" formControlName="codigo_esp"
+                    (change)="onEspChange($event)"
+                    [class.is-invalid]="citaForm.get('codigo_esp')!.invalid && citaForm.get('codigo_esp')!.touched">
+              <option value="">— Seleccionar —</option>
+              @for (e of especialidades(); track e.codigo_esp) {
+                <option [value]="e.codigo_esp">{{ e.nombre }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">Selecciona una especialidad</div>
+          </div>
+
+          <!-- Prestación -->
+          <div class="mb-4">
+            <label class="form-label">Prestación</label>
+            <select class="form-select" formControlName="id_prest"
+                    [class.is-invalid]="citaForm.get('id_prest')!.invalid && citaForm.get('id_prest')!.touched">
+              <option [value]="0">
+                @if (!selectedEsp()) { — Primero elige una especialidad — }
+                @else                { — Seleccionar prestación — }
+              </option>
+              @for (p of filteredPrestaciones(); track p.id_prest) {
+                <option [value]="p.id_prest">
+                  {{ p.nombre }} — {{ p.precio | currency:'EUR':'symbol':'1.2-2':'es' }}
+                </option>
+              }
+            </select>
+            <div class="invalid-feedback">Selecciona una prestación</div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary" [disabled]="savingCita()">
+              @if (savingCita()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Confirmar cita
+            </button>
+          </div>
+
+        </form>
+      }
+
+      <!-- ── VIEW CITA ──────────────────────────────────────────────── -->
+      @if (panelMode() === 'view-cita' && selectedCita()) {
+        @let cita = selectedCita()!;
+        <div class="panel-body">
+
+          <div class="cita-detail mb-4">
+            <div class="cita-row">
+              <i class="bi bi-person-fill cita-icon"></i>
+              <div>
+                <div class="fw-semibold">{{ cita.paciente?.nombre }} {{ cita.paciente?.apellido1 }}</div>
+              </div>
+            </div>
+            @if (cita.prestacion) {
+              <div class="cita-row">
+                <i class="bi bi-clipboard2-pulse-fill cita-icon"></i>
+                <div>
+                  <div class="fw-semibold">{{ cita.prestacion.nombre }}</div>
+                  @if (cita.prestacion.descripcion) {
+                    <div class="text-muted small">{{ cita.prestacion.descripcion }}</div>
+                  }
+                </div>
+              </div>
+              <div class="cita-row">
+                <i class="bi bi-currency-euro cita-icon"></i>
+                <div class="fw-semibold text-primary">
+                  {{ cita.prestacion.precio | currency:'EUR':'symbol':'1.2-2':'es' }}
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Estado -->
+          <p class="label-section">Estado de la cita</p>
+          <div class="estado-grid">
+            @for (est of ESTADOS; track est) {
+              <button type="button"
+                      class="btn btn-sm estado-btn {{ estadoClass(est) }}"
+                      [class.active]="cita.estado === est"
+                      [disabled]="updatingEstado()"
+                      (click)="setEstado(est)">
+                @if (updatingEstado() && cita.estado === est) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                } @else {
+                  {{ est }}
+                }
+              </button>
+            }
+          </div>
+
+          <!-- Cancel -->
+          @if (cita.estado === 'citado') {
+            <div class="mt-4 pt-3 border-top">
+              <button type="button" class="btn btn-outline-danger w-100" (click)="cancelCita()">
+                <i class="bi bi-x-circle me-2"></i>Cancelar cita
+              </button>
+            </div>
+          }
+
+        </div>
+      }
+
+    </div>
+  }
+
+</div>

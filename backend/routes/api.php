@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\HcController;
 use App\Http\Controllers\Api\DetalleHcController;
 use App\Http\Controllers\Api\FacturaController;
 use App\Http\Controllers\Api\LineaFacturaController;
+use App\Http\Controllers\Api\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +23,7 @@ use App\Http\Controllers\Api\LineaFacturaController;
 |--------------------------------------------------------------------------
 | Solo el Login es público. Nadie entra sin pasar por aquí. (Ni tampoco pueden registrarse, es todo "backoffice")
 */
-// Route::post('login', [AuthController::class, 'login']); // La crearemos luego
+Route::post('login', [AuthController::class, 'login']); // La crearemos luego
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +32,10 @@ use App\Http\Controllers\Api\LineaFacturaController;
 */
 
 //Actualmente lo dejamos comentado!!De esta manera podremos hacer tests facilmente durante el desarrollo
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Cerrar sesión
+    Route::post('logout', [AuthController::class, 'logout']);
 
     // 1. Identificación: Para saber quién es el usuario logueado
     Route::get('/perfil', function (Request $request) {
@@ -161,4 +165,4 @@ use App\Http\Controllers\Api\LineaFacturaController;
         Route::delete('/{num_linea}', [LineaFacturaController::class, 'destroy']);
     });
 
-// });
+});
