@@ -150,7 +150,15 @@
           </thead>
           <tbody>
             @for (f of sortedFacturas(); track f.num_fact) {
-              <tr>
+
+              <!-- ── Data row ───────────────────────────────────────────── -->
+              <tr class="fact-row"
+                  [class.fact-row--selected]="selectedRow() === f.num_fact"
+                  [class.fact-row--active]="expandedRow() === f.num_fact"
+                  [class.fact-row--abono]="f.estado === 'abono'"
+                  [title]="f.estado === 'abono' ? '' : 'Doble clic para ver acciones'"
+                  (click)="onRowClick(f.num_fact)"
+                  (dblclick)="onRowDblClick(f)">
                 <td class="font-monospace fw-semibold text-primary">#{{ f.num_fact }}</td>
                 <td>{{ f.fecha | date:'dd/MM/yyyy' }}</td>
                 <td>
@@ -159,8 +167,8 @@
                     {{ f.paciente.nombre }}
                   } @else { — }
                 </td>
-                <td class="text-end font-monospace">
-                  {{ importe(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
+                <td class="text-end font-monospace" [class.text-danger]="f.estado === 'abono'">
+                  @if (f.estado === 'abono') { - }{{ importe(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
                 </td>
                 <td class="text-end font-monospace text-danger">
                   @if (abonado(f) > 0) {
@@ -176,6 +184,160 @@
                   @if (f.fact_ref) { #{{ f.fact_ref }} } @else { — }
                 </td>
               </tr>
+
+              <!-- ── Expanded action panel ──────────────────────────────── -->
+              @if (expandedRow() === f.num_fact) {
+                <tr class="fact-actions-row">
+                  <td colspan="7" class="fact-actions-panel">
+
+                    @switch (f.estado) {
+
+                      <!-- BORRADOR: eliminar -->
+                      @case ('borrador') {
+                        @if (actionStep() === 'idle') {
+                          <div class="fact-actions-idle">
+                            <span class="fact-actions-hint">
+                              <i class="bi bi-pencil-square me-1 text-muted"></i>
+                              Factura en borrador — no emitida aún
+                            </span>
+                            <button class="btn btn-sm btn-outline-danger" (click)="startDeleteConfirm()">
+                              <i class="bi bi-trash me-1"></i>Eliminar factura
+                            </button>
+                          </div>
+                        }
+                        @else if (actionStep() === 'delete-confirm') {
+                          <div class="fact-actions-confirm fact-actions-confirm--danger">
+                            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                            <span>¿Eliminar la factura <strong>#{{ f.num_fact }}</strong>? Esta acción no se puede deshacer.</span>
+                            <button class="btn btn-sm btn-danger" (click)="doDeleteFactura(f)">
+                              <i class="bi bi-trash me-1"></i>Sí, eliminar
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="cancelAction()">Cancelar</button>
+                          </div>
+                        }
+                      }
+
+                      <!-- EMITIDA: abonar / anular -->
+                      @case ('emitida') {
+                        @if (actionStep() === 'idle') {
+                          <div class="fact-actions-idle">
+                            <div class="fact-actions-info">
+                              <span>Importe: <strong>{{ importe(f) | currency:'EUR':'symbol':'1.2-2':'es' }}</strong></span>
+                              @if (abonado(f) > 0) {
+                                <span class="text-danger">
+                                  Ya abonado: <strong>-{{ abonado(f) | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
+                                </span>
+                                <span>
+                                  Restante: <strong>{{ remaining(f) | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
+                                </span>
+                              }
+                            </div>
+                            <div class="fact-actions-btns">
+                              <button class="btn btn-sm btn-outline-primary" (click)="startAbonoInput()">
+                                <i class="bi bi-receipt-cutoff me-1"></i>Abonar parcialmente
+                              </button>
+                              <button class="btn btn-sm btn-outline-danger" (click)="startAnularConfirm()">
+                                <i class="bi bi-x-circle me-1"></i>Anular completa
+                              </button>
+                            </div>
+                          </div>
+                        }
+                        @else if (actionStep() === 'abono-input') {
+                          <div class="fact-actions-form">
+                            <label class="fact-actions-label">
+                              Importe a abonar
+                              <span class="text-muted">(máx. {{ remaining(f) | currency:'EUR':'symbol':'1.2-2':'es' }})</span>
+                            </label>
+                            <div class="input-group input-group-sm fact-actions-input-group">
+                              <input type="number" class="form-control"
+                                     step="0.01" min="0.01" [max]="remaining(f)"
+                                     [ngModel]="abonoInput()" (ngModelChange)="abonoInput.set($event)"
+                                     placeholder="0.00">
+                              <span class="input-group-text">€</span>
+                            </div>
+                            <button class="btn btn-sm btn-primary"
+                                    [disabled]="!abonoInputValid(f)"
+                                    (click)="goAbonoConfirm(f)">
+                              Continuar
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="cancelAction()">Cancelar</button>
+                          </div>
+                        }
+                        @else if (actionStep() === 'abono-confirm') {
+                          <div class="fact-actions-confirm">
+                            <i class="bi bi-question-circle-fill text-warning"></i>
+                            <span>
+                              ¿Seguro que quiere abonar la factura <strong>#{{ f.num_fact }}</strong>
+                              por importe de <strong>{{ abonoInput() }} €</strong>?
+                            </span>
+                            <button class="btn btn-sm btn-primary" (click)="doAbonoParcial(f)">
+                              <i class="bi bi-check-circle me-1"></i>Confirmar
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="cancelAction()">Cancelar</button>
+                          </div>
+                        }
+                        @else if (actionStep() === 'anular-confirm') {
+                          <div class="fact-actions-confirm fact-actions-confirm--danger">
+                            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                            <span>
+                              ¿Seguro que quiere <strong>anular</strong> la factura <strong>#{{ f.num_fact }}</strong>
+                              por importe de <strong>{{ remaining(f) | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>?
+                              La cita asociada volverá a estado <em>Atendida</em>.
+                            </span>
+                            <button class="btn btn-sm btn-danger" (click)="doAnularCompleta(f)">
+                              <i class="bi bi-x-circle me-1"></i>Confirmar anulación
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" (click)="cancelAction()">Cancelar</button>
+                          </div>
+                        }
+                      }
+
+                      <!-- ANULADA: listado de abonos -->
+                      @case ('anulada') {
+                        <div class="fact-actions-abonos">
+                          <span class="fact-actions-abonos-title">
+                            <i class="bi bi-list-ul me-1"></i>Abonos / facturas rectificativas
+                          </span>
+                          @if (f.abonos && f.abonos.length > 0) {
+                            <table class="table table-sm fact-abonos-table mb-0">
+                              <thead>
+                                <tr>
+                                  <th>Nº Abono</th>
+                                  <th>Fecha abono</th>
+                                  <th class="text-end">Importe</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (a of f.abonos; track a.num_fact) {
+                                  <tr>
+                                    <td class="font-monospace">#{{ a.num_fact }}</td>
+                                    <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
+                                    <td class="text-end font-monospace text-danger">
+                                      -{{ importe(a) | currency:'EUR':'symbol':'1.2-2':'es' }}
+                                    </td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          } @else {
+                            <span class="text-muted small">No hay abonos registrados.</span>
+                          }
+                        </div>
+                      }
+
+                    }<!-- end @switch -->
+
+                    <!-- Error inline -->
+                    @if (actionError()) {
+                      <div class="fact-actions-error">
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ actionError() }}
+                      </div>
+                    }
+
+                  </td>
+                </tr>
+              }
+
             }
           </tbody>
         </table>
@@ -215,15 +377,15 @@
   @if (!loading() && totalItems() > 0) {
     <div class="fact-totals">
       <div class="fact-total-row">
-        <span class="fact-total-label">Facturas Emitidas</span>
+        <span class="fact-total-label">Facturado</span>
         <span class="fact-total-val text-success">
-          {{ totales().emitidas | currency:'EUR':'symbol':'1.2-2':'es' }}
+          {{ totales().facturado | currency:'EUR':'symbol':'1.2-2':'es' }}
         </span>
       </div>
       <div class="fact-total-row">
-        <span class="fact-total-label">Abonadas / Anuladas</span>
+        <span class="fact-total-label">Abonos</span>
         <span class="fact-total-val text-danger">
-          -{{ totales().anuladas_abonos | currency:'EUR':'symbol':'1.2-2':'es' }}
+          -{{ totales().abonos | currency:'EUR':'symbol':'1.2-2':'es' }}
         </span>
       </div>
       <div class="fact-total-row fact-total-row--neto">

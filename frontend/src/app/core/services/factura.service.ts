@@ -30,9 +30,9 @@ export interface FacturasResponse {
   facturas:    Factura[];
   total_items: number;
   totales: {
-    emitidas:        number;
-    anuladas_abonos: number;
-    neto:            number;
+    facturado: number;
+    abonos:    number;
+    neto:      number;
   };
 }
 
@@ -60,5 +60,14 @@ export class FacturaService {
 
   getFactura(numFact: number) {
     return this.http.get<Factura>(`/api/facturas/${numFact}`);
+  }
+
+  deleteFactura(numFact: number) {
+    return this.http.delete<{ message: string }>(`/api/facturas/${numFact}`);
+  }
+
+  crearAbono(numFact: number, importe?: number) {
+    const body = importe !== undefined ? { importe } : {};
+    return this.http.post<Factura>(`/api/facturas/${numFact}/abono`, body);
   }
 }

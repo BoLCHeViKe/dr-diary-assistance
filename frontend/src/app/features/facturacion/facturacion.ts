@@ -7,8 +7,9 @@ import { PacienteService, Paciente } from '../../core/services/paciente.service'
 const ESTADOS_FACTURA = ['borrador', 'emitida', 'anulada', 'abono'] as const;
 type EstadoFact = typeof ESTADOS_FACTURA[number];
 
-type SortCol = 'num_fact' | 'fecha' | 'paciente' | 'importe' | 'abonado' | 'estado';
-type SortDir = 'asc' | 'desc';
+type SortCol    = 'num_fact' | 'fecha' | 'paciente' | 'importe' | 'abonado' | 'estado';
+type SortDir    = 'asc' | 'desc';
+type ActionStep = 'idle' | 'delete-confirm' | 'abono-input' | 'abono-confirm' | 'anular-confirm';
 
 @Component({
   selector: 'app-facturacion',
@@ -23,10 +24,17 @@ export class FacturacionComponent implements OnInit {
   // ── State ─────────────────────────────────────────────────────────────────
   facturas    = signal<Factura[]>([]);
   totalItems  = signal(0);
-  totales     = signal({ emitidas: 0, anuladas_abonos: 0, neto: 0 });
+  totales     = signal({ facturado: 0, abonos: 0, neto: 0 });
   loading     = signal(false);
   error       = signal('');
   currentPage = signal(1);
+
+  // ── Row interaction ────────────────────────────────────────────────────────
+  selectedRow  = signal<number | null>(null);
+  expandedRow  = signal<number | null>(null);
+  actionStep   = signal<ActionStep>('idle');
+  abonoInput   = signal('');
+  actionError  = signal('');
 
   // ── Sorting ───────────────────────────────────────────────────────────────
   sortCol = signal<SortCol>('num_fact');
@@ -201,6 +209,93 @@ export class FacturacionComponent implements OnInit {
   abonado(f: Factura): number {
     if (f.abonado_calc !== undefined) return f.abonado_calc;
     return (f.abonos ?? []).reduce((s, a) => s + (a.lineas ?? []).reduce((ss, l) => ss + (Number(l.total) || 0), 0), 0);
+  }
+
+  remaining(f: Factura): number {
+    return Math.round((this.importe(f) - this.abonado(f)) * 100) / 100;
+  }
+
+  // ── Row interaction ────────────────────────────────────────────────────────
+  onRowClick(numFact: number) {
+    this.selectedRow.set(numFact);
+  }
+
+  onRowDblClick(f: Factura) {
+    if (f.estado === 'abono') return;
+    const same = this.expandedRow() === f.num_fact;
+    this.expandedRow.set(same ? null : f.num_fact);
+    if (!same) {
+      this.actionStep.set('idle');
+      this.abonoInput.set('');
+      this.actionError.set('');
+    }
+    this.selectedRow.set(f.num_fact);
+  }
+
+  // ── Acciones: Borrador ────────────────────────────────────────────────────
+  startDeleteConfirm() { this.actionStep.set('delete-confirm'); }
+
+  doDeleteFactura(f: Factura) {
+    this.svc.deleteFactura(f.num_fact).subscribe({
+      next: () => {
+        this.expandedRow.set(null);
+        this.selectedRow.set(null);
+        const page = this.facturas().length === 1 && this.currentPage() > 1
+          ? this.currentPage() - 1
+          : this.currentPage();
+        this.load(page);
+      },
+      error: (e) => this.actionError.set(e.error?.message ?? 'Error al eliminar la factura'),
+    });
+  }
+
+  // ── Acciones: Emitida — Abono parcial ─────────────────────────────────────
+  startAbonoInput() {
+    this.abonoInput.set('');
+    this.actionError.set('');
+    this.actionStep.set('abono-input');
+  }
+
+  abonoInputValid(f: Factura): boolean {
+    const v = parseFloat(this.abonoInput());
+    return isFinite(v) && v > 0 && v <= this.remaining(f);
+  }
+
+  goAbonoConfirm(f: Factura) {
+    if (!this.abonoInputValid(f)) {
+      this.actionError.set(`Introduce un importe entre 0.01 € y ${this.remaining(f).toFixed(2)} €`);
+      return;
+    }
+    this.actionError.set('');
+    this.actionStep.set('abono-confirm');
+  }
+
+  doAbonoParcial(f: Factura) {
+    const importe = parseFloat(this.abonoInput());
+    this.svc.crearAbono(f.num_fact, importe).subscribe({
+      next: () => { this.expandedRow.set(null); this.load(this.currentPage()); },
+      error: (e) => this.actionError.set(e.error?.message ?? 'Error al crear el abono'),
+    });
+  }
+
+  // ── Acciones: Emitida — Anular completa ───────────────────────────────────
+  startAnularConfirm() {
+    this.actionError.set('');
+    this.actionStep.set('anular-confirm');
+  }
+
+  doAnularCompleta(f: Factura) {
+    this.svc.crearAbono(f.num_fact).subscribe({
+      next: () => { this.expandedRow.set(null); this.load(this.currentPage()); },
+      error: (e) => this.actionError.set(e.error?.message ?? 'Error al anular la factura'),
+    });
+  }
+
+  // ── Cancelar cualquier acción ─────────────────────────────────────────────
+  cancelAction() {
+    this.actionStep.set('idle');
+    this.abonoInput.set('');
+    this.actionError.set('');
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

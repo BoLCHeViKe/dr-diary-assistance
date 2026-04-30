@@ -140,10 +140,153 @@
     border-color: #f0f4f8;
     white-space: nowrap;
   }
+}
 
-  tbody tr {
-    transition: background 0.1s;
-    &:hover { background: #f8fbff; }
+// ── Row interaction ────────────────────────────────────────────────────────────
+// Bootstrap 5 applies background via box-shadow/CSS-vars on <td>, not <tr>.
+// Setting background on <tr> alone is invisible — must target > td directly.
+.fact-row {
+  cursor: pointer;
+  user-select: none;
+
+  > td { transition: background-color 0.1s; }
+
+  &:hover > td { background-color: #f8fbff; }
+
+  &--selected > td { background-color: #cfe7ff !important; }
+
+  &--active > td {
+    background-color: #eff6ff !important;
+    border-bottom: none !important;
+  }
+
+  &--abono {
+    cursor: default;
+    opacity: 0.85;
+  }
+}
+
+// ── Action panel row ──────────────────────────────────────────────────────────
+.fact-actions-row > td {
+  background: #f0f6ff;
+  border-top: none !important;
+  border-bottom: 2px solid #bcd2ef !important;
+  padding: 0 !important;
+}
+
+.fact-actions-panel {
+  padding: 0.75rem 1rem !important;
+}
+
+// ── Idle state (action buttons) ───────────────────────────────────────────────
+.fact-actions-idle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.fact-actions-hint {
+  font-size: 0.825rem;
+  color: #64748b;
+  flex: 1;
+}
+
+.fact-actions-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  font-size: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.fact-actions-btns {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// ── Form state (abono input) ──────────────────────────────────────────────────
+.fact-actions-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.fact-actions-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.fact-actions-input-group {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+// ── Confirm state ─────────────────────────────────────────────────────────────
+.fact-actions-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+
+  &--danger {
+    padding: 0.5rem 0.75rem;
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 0.5rem;
+  }
+}
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+.fact-actions-error {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #c53030;
+  font-weight: 600;
+}
+
+// ── Abonos sub-table (anulada) ────────────────────────────────────────────────
+.fact-actions-abonos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fact-actions-abonos-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.fact-abonos-table {
+  max-width: 480px;
+  font-size: 0.825rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  thead th {
+    background: #f1f5f9;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  tbody td {
+    padding: 0.4rem 0.75rem;
+    border-color: #f0f4f8;
   }
 }
 
@@ -154,9 +297,9 @@
   letter-spacing: 0.03em;
 
   &--borrador { background: #adb5bd;  color: #fff; }
-  &--emitida  { background: #0092E0;  color: #fff; }
+  &--emitida  { background: #27ae60;  color: #fff; }
   &--anulada  { background: #e74c3c;  color: #fff; }
-  &--abono    { background: #27ae60;  color: #fff; }
+  &--abono    { background: #0092E0;  color: #fff; }
 }
 
 // ── Totals ────────────────────────────────────────────────────────────────────

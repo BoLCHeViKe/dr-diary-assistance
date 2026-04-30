@@ -35,18 +35,19 @@ class FacturaController extends Controller
         $all = $query->get();
 
         // Compute totals + per-factura importe/abonado over the ENTIRE filtered result set
-        $sumEmitidas = 0.0;
-        $sumAnuladas = 0.0;
-        $sumAbonos   = 0.0;
+        // facturado = emitidas + anuladas (ambas representan facturación real emitida)
+        // abonos    = solo facturas de tipo abono (notas de crédito)
+        // neto      = facturado - abonos
+        $sumFacturado = 0.0;
+        $sumAbonos    = 0.0;
         foreach ($all as $f) {
             $importe = (float) $f->lineas->sum('total');
             $abonado = (float) $f->abonos->sum(fn($a) => $a->lineas->sum('total'));
             $f->importe_calc = round($importe, 2);
             $f->abonado_calc = round($abonado, 2);
 
-            if ($f->estado === 'emitida')  $sumEmitidas += $importe;
-            if ($f->estado === 'anulada')  $sumAnuladas += $importe;
-            if ($f->estado === 'abono')    $sumAbonos   += $importe;
+            if ($f->estado === 'emitida' || $f->estado === 'anulada') $sumFacturado += $importe;
+            if ($f->estado === 'abono')                                $sumAbonos    += $importe;
         }
 
         // Paginate in PHP (avoids a second DB query)
@@ -58,9 +59,9 @@ class FacturaController extends Controller
             'facturas'    => $paged,
             'total_items' => $all->count(),
             'totales'     => [
-                'emitidas'        => round($sumEmitidas, 2),
-                'anuladas_abonos' => round($sumAnuladas + $sumAbonos, 2),
-                'neto'            => round($sumEmitidas - $sumAnuladas - $sumAbonos, 2),
+                'facturado' => round($sumFacturado, 2),
+                'abonos'    => round($sumAbonos, 2),
+                'neto'      => round($sumFacturado - $sumAbonos, 2),
             ],
         ]);
     }
@@ -193,7 +194,8 @@ class FacturaController extends Controller
     }
 
     // POST /api/facturas/{num_fact}/abono
-    // Ahora acepta un body opcional para abonos parciales
+    // Body: { "importe": float }  → abono parcial por ese importe
+    // Body: {}                    → abono total (cubre todo el importe restante)
     public function crearAbono(Request $request, $num_fact)
     {
         $facturaOriginal = Factura::with(['lineas', 'abonos.lineas'])->find($num_fact);
@@ -208,70 +210,68 @@ class FacturaController extends Controller
             ], 422);
         }
 
-        // 1. Calcular cuánto queda disponible para abonar
-        $totalOriginal = $facturaOriginal->lineas->sum('total');
-        $totalYaAbonado = $facturaOriginal->abonos->reduce(function ($carry, $abono) {
-            return $carry + $abono->lineas->sum('total');
-        }, 0);
-        
-        $disponibleParaAbonar = round($totalOriginal - $totalYaAbonado, 2);
+        $totalOriginal = round((float) $facturaOriginal->lineas->sum('total'), 2);
+        $totalAbonado  = round((float) $facturaOriginal->abonos->sum(fn($a) => $a->lineas->sum('total')), 2);
+        $maxAbono      = round($totalOriginal - $totalAbonado, 2);
 
-        if ($disponibleParaAbonar <= 0) {
-            return response()->json(['error' => 'Esta factura ya ha sido abonada totalmente'], 422);
+        if ($maxAbono <= 0) {
+            return response()->json(['error' => 'La factura ya está completamente abonada'], 422);
         }
 
-        // 2. Determinar qué líneas vamos a abonar
-        // Si el request trae 'lineas', es un abono parcial. Si no, es total (de lo que quede).
-        $lineasAbonar = [];
-        if ($request->has('lineas')) {
-            $request->validate([
-                'lineas' => 'required|array|min:1',
-                'lineas.*.codigo_esp' => 'required|string',
-                'lineas.*.id_prest'   => 'required|integer',
-                'lineas.*.cantidad'   => 'required|integer|min:1',
-                'lineas.*.precio'     => 'required|numeric|min:0'
-            ]);
-            $lineasAbonar = $request->lineas;
-        } else {
-            // Abono total: usamos las líneas de la original
-            foreach ($facturaOriginal->lineas as $l) {
-                $lineasAbonar[] = [
-                    'codigo_esp' => $l->codigo_esp,
-                    'id_prest'   => $l->id_prest,
-                    'cantidad'   => $l->cantidad,
-                    'precio'     => $l->precio
-                ];
-            }
-        }
+        // Si no se pasa importe, abono total (lo que quede)
+        $importeEfectivo = $request->has('importe')
+            ? round((float) $request->importe, 2)
+            : $maxAbono;
 
-        // 3. Validar que el nuevo abono no supere el disponible
-        $totalNuevoAbono = collect($lineasAbonar)->reduce(fn($c, $l) => $c + ($l['cantidad'] * $l['precio']), 0);
-        
-        if (round($totalNuevoAbono, 2) > $disponibleParaAbonar) {
+        if ($importeEfectivo <= 0 || $importeEfectivo > $maxAbono) {
             return response()->json([
-                'error' => 'Importe excedido',
-                'message' => "No puedes abonar {$totalNuevoAbono}€. El máximo pendiente es {$disponibleParaAbonar}€."
+                'error'   => 'Importe inválido',
+                'message' => "El importe debe estar entre 0.01 y {$maxAbono} €"
             ], 422);
         }
 
+        $primeraLinea = $facturaOriginal->lineas->first();
+        if (!$primeraLinea) {
+            return response()->json(['error' => 'La factura no tiene líneas'], 422);
+        }
+
         try {
-            return DB::transaction(function () use ($facturaOriginal, $lineasAbonar) {
+            return DB::transaction(function () use ($facturaOriginal, $importeEfectivo, $maxAbono, $primeraLinea) {
+                // Create as 'borrador' so the DB security trigger allows both
+                // INSERT and UPDATE on lineafactura (trigger blocks UPDATE on non-borrador)
                 $abono = Factura::create([
                     'id_paciente' => $facturaOriginal->id_paciente,
-                    'estado'      => 'abono',
+                    'estado'      => 'borrador',
                     'fecha'       => now()->toDateString(),
-                    'fact_ref'    => $facturaOriginal->num_fact
+                    'fact_ref'    => $facturaOriginal->num_fact,
                 ]);
 
-                foreach ($lineasAbonar as $l) {
-                    LineaFactura::create([
-                        'num_fact'   => $abono->num_fact,
-                        'codigo_esp' => $l['codigo_esp'],
-                        'id_prest'   => $l['id_prest'],
-                        'cantidad'   => $l['cantidad'],
-                        'precio'     => $l['precio'],
-                        'total'      => $l['cantidad'] * $l['precio']
-                    ]);
+                // INSERT line — trg_lineafactura_precio_total_auto fills precio/total from prestacion
+                LineaFactura::create([
+                    'num_fact'   => $abono->num_fact,
+                    'cantidad'   => 1,
+                    'codigo_esp' => $primeraLinea->codigo_esp,
+                    'id_prest'   => $primeraLinea->id_prest,
+                    'precio'     => 0,
+                    'total'      => 0,
+                ]);
+
+                // Override trigger-set values with the actual abono amount (allowed on borrador)
+                DB::table('lineafactura')
+                    ->where('num_fact', $abono->num_fact)
+                    ->update(['precio' => $importeEfectivo, 'total' => $importeEfectivo]);
+
+                // Now transition to 'abono' (no more line operations after this)
+                $abono->estado = 'abono';
+                $abono->save();
+
+                // Full abono: mark original as anulada + free citas back to atendido
+                if ($importeEfectivo >= $maxAbono) {
+                    $facturaOriginal->estado = 'anulada';
+                    $facturaOriginal->save();
+                    DB::table('cita')
+                        ->where('num_fact', $facturaOriginal->num_fact)
+                        ->update(['estado' => 'atendido', 'num_fact' => null]);
                 }
 
                 return response()->json($abono->load(['lineas', 'paciente']), 201);
