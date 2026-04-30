@@ -21,11 +21,11 @@ export const routes: Routes = [
       },
       {
         path: 'pacientes',
-        loadComponent: () => import('./features/construccion/construccion').then(m => m.ConstruccionComponent)
+        loadComponent: () => import('./features/pacientes/pacientes').then(m => m.PacientesComponent)
       },
       {
         path: 'facturacion',
-        loadComponent: () => import('./features/construccion/construccion').then(m => m.ConstruccionComponent)
+        loadComponent: () => import('./features/facturacion/facturacion').then(m => m.FacturacionComponent)
       },
       {
         path: 'gestion',

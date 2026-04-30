@@ -1,8 +1,29 @@
-// ── Page container ────────────────────────────────────────────────────────────
-.agenda-page {
+// ── Two-column layout ─────────────────────────────────────────────────────────
+.agenda-layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
   position: relative;
+}
+
+.agenda-main {
+  flex: 1;
+  min-width: 0;
   max-width: 800px;
-  margin: 0 auto;
+}
+
+// ── Sidebar (desktop calendar) ────────────────────────────────────────────────
+.agenda-sidebar {
+  width: 290px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px; // below navbar
+  align-self: flex-start;
+}
+
+.agenda-sidebar__cal {
+  border-radius: 0.85rem;
+  overflow: hidden;
 }
 
 // ── Date navigation bar ───────────────────────────────────────────────────────
@@ -194,8 +215,8 @@
 // ── Estado badge colors ───────────────────────────────────────────────────────
 .estado-citado    { background: #00B8F5; color: #fff; }
 .estado-en-espera { background: #f0a500; color: #fff; }
-.estado-validado  { background: #28a745; color: #fff; }
-.estado-facturado { background: #04078B; color: #fff; }
+.estado-atendido  { background: #8e44ad; color: #fff; }
+.estado-facturado { background: #27ae60; color: #fff; }
 
 // ── Side panel ────────────────────────────────────────────────────────────────
 .panel-backdrop {
@@ -347,7 +368,62 @@
   &:disabled { cursor: not-allowed; }
 }
 
+// ── Selected patient card (inside create-cita panel) ─────────────────────────
+.patient-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f0f9ff;
+  border: 1.5px solid #b3d7f7;
+  border-radius: 0.65rem;
+
+  &__icon {
+    color: #0092E0;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  &__info { flex: 1; min-width: 0; }
+}
+
+// ── Calendar trigger ──────────────────────────────────────────────────────────
+.cal-trigger {
+  cursor: pointer;
+
+  &:hover { opacity: 0.8; }
+}
+
+// ── Calendar dropdown ─────────────────────────────────────────────────────────
+.cal-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1060;
+  animation: fadeIn 0.15s ease;
+}
+
+// ── Billing sub-panel ─────────────────────────────────────────────────────────
+.billing-panel {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1.5px solid #e2e8f0;
+}
+
 // ── Mobile adjustments ────────────────────────────────────────────────────────
+@media (max-width: 991.98px) {
+  .agenda-layout {
+    flex-direction: column;
+  }
+
+  .agenda-main {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 575.98px) {
   .agenda-header {
     flex-wrap: wrap;

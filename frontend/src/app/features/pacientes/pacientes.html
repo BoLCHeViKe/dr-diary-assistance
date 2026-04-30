@@ -1,0 +1,140 @@
+<div class="pacientes-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="pacientes-header mb-3">
+    <h5 class="page-title mb-0">Pacientes</h5>
+    <button class="btn btn-primary btn-lg btn-crear" (click)="openCreate()">
+      <i class="bi bi-person-plus-fill me-2"></i>Crear Paciente
+    </button>
+  </div>
+
+  <!-- ── Global error ────────────────────────────────────────────────────── -->
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="flex-grow-1">{{ error() }}</span>
+      <button type="button" class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <!-- ── Patient selector ────────────────────────────────────────────────── -->
+  <app-paciente-selector
+    mode="page"
+    [refreshTrigger]="refreshTrigger()"
+    (seleccionado)="onSeleccionado($event)"
+    (abierto)="onAbierto($event)" />
+
+  <!-- ── Action bar ──────────────────────────────────────────────────────── -->
+  @if (pacienteActivo()) {
+    <div class="action-bar">
+      <div class="action-bar__info">
+        <i class="bi bi-person-check-fill"></i>
+        <strong>{{ pacienteActivo()!.apellido1 }}{{ pacienteActivo()!.apellido2 ? ' ' + pacienteActivo()!.apellido2 : '' }}, {{ pacienteActivo()!.nombre }}</strong>
+        <span class="text-muted font-monospace ms-2 small">{{ pacienteActivo()!.dni }}</span>
+        @if (pacienteActivo()!.nhc) {
+          <span class="text-muted ms-2 small">NHC: {{ pacienteActivo()!.nhc }}</span>
+        }
+      </div>
+      <div class="action-bar__buttons">
+        <button class="btn btn-sm btn-outline-primary" (click)="openEdit()">
+          <i class="bi bi-pencil me-1"></i>Editar paciente
+        </button>
+        <button class="btn btn-sm btn-outline-danger" (click)="deletePaciente()">
+          <i class="bi bi-trash me-1"></i>Eliminar paciente
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" disabled title="Próximamente">
+          <i class="bi bi-folder2-open me-1"></i>Ver H.C.
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Side panel ──────────────────────────────────────────────────────── -->
+  @if (panelMode()) {
+    <div class="panel-backdrop" (click)="closePanel()"></div>
+    <div class="side-panel">
+
+      <!-- Panel header -->
+      <div class="panel-header">
+        @if (panelMode() === 'create') { <span>Nuevo paciente</span> }
+        @if (panelMode() === 'edit')   { <span>Editar paciente</span> }
+        <button type="button" class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="form" (ngSubmit)="submitForm()" class="panel-body">
+
+        @if (formError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ formError() }}
+          </div>
+        }
+
+        <div class="row g-3">
+
+          <div class="col-12">
+            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="nombre"
+                   [class.is-invalid]="invalid('nombre')" maxlength="30">
+            <div class="invalid-feedback">Obligatorio (máx. 30 caracteres)</div>
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Apellido 1 <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="apellido1"
+                   [class.is-invalid]="invalid('apellido1')" maxlength="30">
+            <div class="invalid-feedback">Obligatorio (máx. 30 caracteres)</div>
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Apellido 2</label>
+            <input type="text" class="form-control" formControlName="apellido2" maxlength="30">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label class="form-label">DNI <span class="text-danger">*</span></label>
+            <input type="text" class="form-control font-monospace text-uppercase"
+                   formControlName="dni" placeholder="00000000A" maxlength="9"
+                   [class.is-invalid]="invalid('dni')">
+            <div class="invalid-feedback">Formato: 8 dígitos + letra válida (ej. 12345678Z)</div>
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Fecha de nacimiento</label>
+            <input type="date" class="form-control" formControlName="fecha_nac">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" class="form-control" formControlName="telf"
+                   placeholder="600 000 000" maxlength="13">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" formControlName="email"
+                   [class.is-invalid]="invalid('email')" maxlength="64">
+            <div class="invalid-feedback">Formato de email no válido</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-control" formControlName="direccion"
+                   placeholder="Calle, número, ciudad" maxlength="100">
+          </div>
+
+        </div>
+
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            @if (panelMode() === 'create') { Crear paciente }
+            @if (panelMode() === 'edit')   { Guardar cambios }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+
+</div>

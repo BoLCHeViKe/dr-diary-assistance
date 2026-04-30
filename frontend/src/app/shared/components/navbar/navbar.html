@@ -25,47 +25,44 @@
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
         <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"
+             (click)="closeCollapse()">
             <i class="bi bi-house me-1"></i>Inicio
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" routerLink="/agenda" routerLinkActive="active">
+          <a class="nav-link" routerLink="/agenda" routerLinkActive="active" (click)="closeCollapse()">
             <i class="bi bi-calendar3 me-1"></i>Agenda
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" routerLink="/pacientes" routerLinkActive="active">
+          <a class="nav-link" routerLink="/pacientes" routerLinkActive="active" (click)="closeCollapse()">
             <i class="bi bi-people me-1"></i>Pacientes
           </a>
         </li>
 
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button"
-             data-bs-toggle="dropdown" aria-expanded="false">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/facturacion" routerLinkActive="active" (click)="closeCollapse()">
             <i class="bi bi-currency-euro me-1"></i>Facturación
           </a>
-          <ul class="dropdown-menu dropdown-menu-dark">
-            <li><a class="dropdown-item" routerLink="/facturacion">Ver Facturas</a></li>
-          </ul>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" routerLink="/gestion" routerLinkActive="active">
+          <a class="nav-link" routerLink="/gestion" routerLinkActive="active" (click)="closeCollapse()">
             <i class="bi bi-gear me-1"></i>Gestión
           </a>
         </li>
 
         <!-- Mobile-only: Perfil / Ajustes / Salir -->
         <li class="nav-item d-lg-none border-top border-white border-opacity-25 mt-1 pt-1">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="#" (click)="closeCollapse()">
             <i class="bi bi-person-circle me-1"></i>Perfil
           </a>
         </li>
         <li class="nav-item d-lg-none">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="#" (click)="closeCollapse()">
             <i class="bi bi-sliders me-1"></i>Ajustes
           </a>
         </li>

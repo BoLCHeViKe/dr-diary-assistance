@@ -1,0 +1,111 @@
+.cal-popup {
+  background: #fff;
+  border-radius: 0.85rem;
+  box-shadow: 0 8px 32px rgba(4, 7, 139, 0.18);
+  padding: 0.85rem 0.75rem 0.75rem;
+  min-width: 270px;
+  user-select: none;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.cal-month-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #04078B;
+  text-transform: capitalize;
+}
+
+.cal-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0092E0;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.4rem;
+  transition: background 0.12s;
+
+  &:hover { background: #f0f9ff; }
+}
+
+// ── 7-column grid ─────────────────────────────────────────────────────────────
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-dow {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #90a0b7;
+  text-transform: uppercase;
+  padding: 0.25rem 0;
+}
+
+// ── Day cell ──────────────────────────────────────────────────────────────────
+.cal-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+
+  &--empty { cursor: default; pointer-events: none; }
+
+  &:not(.cal-cell--empty):hover:not(.cal-cell--selected):not(.cal-cell--has-agenda) {
+    background: #e8f5ff;
+  }
+
+  // Days with an open agenda: light blue filled circle
+  &--has-agenda:not(.cal-cell--selected) {
+    background: #dbeeff;
+
+    .cal-num {
+      color: #0059b3;
+      font-weight: 700;
+    }
+
+    &:hover {
+      background: #bbd8ff;
+    }
+  }
+
+  // Today: bold blue number
+  &--today:not(.cal-cell--has-agenda):not(.cal-cell--selected) .cal-num {
+    font-weight: 800;
+    color: #0092E0;
+  }
+
+  // Today AND has agenda: bold
+  &--today.cal-cell--has-agenda:not(.cal-cell--selected) .cal-num {
+    font-weight: 800;
+  }
+
+  // Selected: dark navy filled circle
+  &--selected {
+    background: #04078B !important;
+
+    .cal-num {
+      color: #fff;
+      font-weight: 700;
+    }
+  }
+}
+
+.cal-num {
+  font-size: 0.8rem;
+  color: #2d3a4a;
+  line-height: 1;
+}

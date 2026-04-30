@@ -1,0 +1,106 @@
+<div class="ps-wrapper" [class.ps-wrapper--inline]="mode === 'inline'">
+
+  <!-- ── Search form ────────────────────────────────────────────────────── -->
+  <div class="ps-search">
+    <div class="row g-2">
+      <div class="col-12 col-sm-4 ps-col">
+        <input type="text" [class]="mode === 'inline' ? 'form-control form-control-sm' : 'form-control'"
+               placeholder="Apellido 1" [value]="ap1()"
+               (input)="onInput('ap1', $event)" autocomplete="off">
+      </div>
+      <div class="col-12 col-sm-4 ps-col">
+        <input type="text" [class]="mode === 'inline' ? 'form-control form-control-sm' : 'form-control'"
+               placeholder="Apellido 2" [value]="ap2()"
+               (input)="onInput('ap2', $event)" autocomplete="off">
+      </div>
+      <div class="col-12 col-sm-4 ps-col">
+        <input type="text" [class]="mode === 'inline' ? 'form-control form-control-sm' : 'form-control'"
+               placeholder="Nombre" [value]="nom()"
+               (input)="onInput('nom', $event)" autocomplete="off">
+      </div>
+    </div>
+    <div class="row g-2 mt-1">
+      <div class="col ps-col">
+        <input type="text" [class]="mode === 'inline' ? 'form-control form-control-sm' : 'form-control'"
+               placeholder="DNI" [value]="dni()"
+               (input)="onInput('dni', $event)" autocomplete="off" maxlength="9">
+      </div>
+      <div class="col ps-col">
+        <input type="text" [class]="mode === 'inline' ? 'form-control form-control-sm' : 'form-control'"
+               placeholder="Teléfono" [value]="telf()"
+               (input)="onInput('telf', $event)" autocomplete="off">
+      </div>
+      @if (hasQuery()) {
+        <div class="col-auto">
+          <button type="button"
+                  [class]="mode === 'inline' ? 'btn btn-sm ps-clear-btn' : 'btn ps-clear-btn'"
+                  (click)="clear()" title="Limpiar búsqueda">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="text-center py-3">
+      <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+    </div>
+  }
+
+  <!-- ── Empty query state ──────────────────────────────────────────────── -->
+  @if (!loading() && !hasQuery()) {
+    <div class="ps-empty-state">
+      <i class="bi bi-search"></i>
+      <span>Introduce criterios de búsqueda para localizar pacientes</span>
+    </div>
+  }
+
+  <!-- ── No results ─────────────────────────────────────────────────────── -->
+  @if (!loading() && hasQuery() && resultados().length === 0) {
+    <div class="ps-empty-state ps-empty-state--warning">
+      <i class="bi bi-person-x"></i>
+      <span>No se encontraron pacientes con esos criterios</span>
+    </div>
+  }
+
+  <!-- ── Results table ──────────────────────────────────────────────────── -->
+  @if (!loading() && resultados().length > 0) {
+    <div class="ps-results">
+      <table class="table table-hover ps-table mb-0">
+        <thead>
+          <tr>
+            <th>Apellido 1</th>
+            <th>Apellido 2</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            @if (mode === 'page') { <th>Teléfono</th> }
+            @if (mode === 'page') { <th>NHC</th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of resultados(); track p.id_paciente) {
+            <tr [class.ps-row--active]="isActive(p)"
+                (click)="clickRow(p)"
+                (dblclick)="dblClickRow(p)">
+              <td>{{ p.apellido1 }}</td>
+              <td>{{ p.apellido2 ?? '—' }}</td>
+              <td>{{ p.nombre }}</td>
+              <td class="font-monospace">{{ p.dni }}</td>
+              @if (mode === 'page') { <td>{{ p.telf ?? '—' }}</td> }
+              @if (mode === 'page') { <td>{{ p.nhc ?? '—' }}</td> }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (mode === 'page') {
+      <div class="ps-count">
+        {{ resultados().length }} paciente{{ resultados().length !== 1 ? 's' : '' }} encontrado{{ resultados().length !== 1 ? 's' : '' }}
+      </div>
+    }
+  }
+
+</div>

@@ -1,15 +1,18 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
-import { AgendaService, Agenda, Cita, Paciente, Especialidad, Prestacion } from '../../core/services/agenda.service';
+import { AgendaService, Agenda, Cita, Especialidad, Prestacion } from '../../core/services/agenda.service';
+import { Paciente } from '../../core/services/paciente.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PacienteSelectorComponent } from '../../shared/components/paciente-selector/paciente-selector';
+import { AgendaCalendarioComponent } from './agenda-calendario/agenda-calendario';
 
 type PanelMode = null | 'create-agenda' | 'create-cita' | 'view-cita';
-type EstadoCita = 'citado' | 'en espera' | 'validado' | 'facturado';
+type EstadoCita = 'citado' | 'en espera' | 'atendido' | 'facturado';
 
 @Component({
   selector: 'app-agenda',
-  imports: [ReactiveFormsModule, CurrencyPipe],
+  imports: [ReactiveFormsModule, CurrencyPipe, PacienteSelectorComponent, AgendaCalendarioComponent],
   templateUrl: './agenda.html',
   styleUrl: './agenda.scss',
 })
@@ -24,29 +27,35 @@ export class AgendaComponent implements OnInit {
   citas        = signal<Cita[]>([]);
   loading      = signal(false);
   error        = signal('');
+  panelError   = signal(''); // errors shown inside the panel, not at page level
 
   // ── Panel ─────────────────────────────────────────────────────────────────
-  panelMode    = signal<PanelMode>(null);
-  selectedCita = signal<Cita | null>(null);
-  selectedSlot = signal('');
+  panelMode       = signal<PanelMode>(null);
+  selectedCita    = signal<Cita | null>(null);
+  selectedSlot    = signal('');
+  selectedPatient = signal<Paciente | null>(null); // patient picked for a new cita
 
   // ── Catalogues ────────────────────────────────────────────────────────────
-  pacientes     = signal<Paciente[]>([]);
   especialidades = signal<Especialidad[]>([]);
-  prestaciones  = signal<Prestacion[]>([]);
+  prestaciones   = signal<Prestacion[]>([]);
+  selectedEsp    = signal('');
 
-  // ── Patient autocomplete ──────────────────────────────────────────────────
-  patientQuery         = signal('');
-  selectedPatient      = signal<Paciente | null>(null);
-  showPatientDropdown  = signal(false);
-
-  // ── Selected especialidad for prestaciones filter ─────────────────────────
-  selectedEsp = signal('');
+  // ── Calendar dropdown ─────────────────────────────────────────────────────
+  calendarOpen   = signal(false);
+  todasAgendas   = signal<Agenda[]>([]);
+  diasConAgenda  = computed(() => new Set(this.todasAgendas().map(a => a.fecha)));
 
   // ── Saving flags ──────────────────────────────────────────────────────────
   savingAgenda   = signal(false);
   savingCita     = signal(false);
   updatingEstado = signal(false);
+
+  // ── Billing sub-panel ─────────────────────────────────────────────────────
+  billingOpen    = signal(false);
+  billingCantidad = signal(1);
+  billingPrecio  = signal(0);
+  billingError   = signal('');
+  savingBilling  = signal(false);
 
   // ── Forms ─────────────────────────────────────────────────────────────────
   agendaForm = this.fb.nonNullable.group({
@@ -75,6 +84,11 @@ export class AgendaComponent implements OnInit {
     })
   );
 
+  dateDMY = computed(() => {
+    const d = this.selectedDate();
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  });
+
   slots = computed(() => {
     const ag = this.agenda();
     if (!ag) return [];
@@ -100,17 +114,6 @@ export class AgendaComponent implements OnInit {
     this.slots().filter(s => !this.slotMap().has(s)).length
   );
 
-  filteredPacientes = computed(() => {
-    const q = this.patientQuery().toLowerCase().trim();
-    if (q.length < 2) return [];
-    return this.pacientes()
-      .filter(p =>
-        `${p.nombre} ${p.apellido1} ${p.apellido2 ?? ''} ${p.dni}`
-          .toLowerCase().includes(q)
-      )
-      .slice(0, 8);
-  });
-
   filteredPrestaciones = computed(() =>
     this.prestaciones().filter(p => p.codigo_esp === this.selectedEsp())
   );
@@ -120,7 +123,7 @@ export class AgendaComponent implements OnInit {
   }
 
   readonly INTERVALOS: number[] = [5, 10, 15, 20, 30, 45, 60];
-  readonly ESTADOS: EstadoCita[] = ['citado', 'en espera', 'validado', 'facturado'];
+  readonly ESTADOS: EstadoCita[] = ['citado', 'en espera', 'atendido', 'facturado'];
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {
@@ -164,9 +167,11 @@ export class AgendaComponent implements OnInit {
     this.agenda.set(null);
     this.citas.set([]);
     this.panelMode.set(null);
+    this.calendarOpen.set(false);
 
     this.svc.getAgendasMedico(this.medicoId).subscribe({
       next: (agendas) => {
+        this.todasAgendas.set(agendas);
         const found = agendas.find(a => a.fecha === this.dateStr());
         if (found) {
           this.agenda.set(found);
@@ -190,7 +195,6 @@ export class AgendaComponent implements OnInit {
   }
 
   private loadCatalogues() {
-    this.svc.getPacientes().subscribe(p => this.pacientes.set(p));
     this.svc.getEspecialidades().subscribe(e => this.especialidades.set(e));
     this.svc.getPrestaciones().subscribe(p => this.prestaciones.set(p));
   }
@@ -203,9 +207,10 @@ export class AgendaComponent implements OnInit {
     this.selectedCita.set(null);
     this.selectedSlot.set('');
     this.selectedPatient.set(null);
-    this.patientQuery.set('');
-    this.showPatientDropdown.set(false);
     this.selectedEsp.set('');
+    this.panelError.set('');
+    this.billingOpen.set(false);
+    this.billingError.set('');
     this.agendaForm.reset({ h_inicio: '09:00', h_fin: '14:00', min_intervalo: 15 });
     this.citaForm.reset({ codigo_esp: '', id_prest: 0 });
   }
@@ -213,9 +218,8 @@ export class AgendaComponent implements OnInit {
   openNewCita(slot: string) {
     this.selectedSlot.set(slot);
     this.selectedPatient.set(null);
-    this.patientQuery.set('');
-    this.showPatientDropdown.set(false);
     this.selectedEsp.set('');
+    this.panelError.set('');
     this.citaForm.reset({ codigo_esp: '', id_prest: 0 });
     this.panelMode.set('create-cita');
   }
@@ -225,18 +229,14 @@ export class AgendaComponent implements OnInit {
     this.panelMode.set('view-cita');
   }
 
-  // ── Patient autocomplete ──────────────────────────────────────────────────
-  onPatientInput(event: Event) {
-    const val = (event.target as HTMLInputElement).value;
-    this.patientQuery.set(val);
-    this.selectedPatient.set(null);
-    this.showPatientDropdown.set(val.trim().length >= 2);
+  // ── Patient selection (from inline PacienteSelector) ─────────────────────
+  onPacienteSeleccionado(p: Paciente) {
+    this.selectedPatient.set(p);
+    this.panelError.set('');
   }
 
-  selectPatient(p: Paciente) {
-    this.selectedPatient.set(p);
-    this.patientQuery.set(`${p.nombre} ${p.apellido1}`);
-    this.showPatientDropdown.set(false);
+  clearPatient() {
+    this.selectedPatient.set(null);
   }
 
   onEspChange(event: Event) {
@@ -259,7 +259,7 @@ export class AgendaComponent implements OnInit {
   }
 
   submitCreateCita() {
-    if (!this.selectedPatient()) { this.error.set('Selecciona un paciente.'); return; }
+    if (!this.selectedPatient()) { this.panelError.set('Selecciona un paciente antes de continuar.'); return; }
     if (this.citaForm.invalid)   { this.citaForm.markAllAsTouched(); return; }
     const ag = this.agenda();
     if (!ag) return;
@@ -273,7 +273,7 @@ export class AgendaComponent implements OnInit {
     }).subscribe({
       next: () => { this.savingCita.set(false); this.closePanel(); this.loadAgenda(); },
       error: (e) => {
-        this.error.set(e.error?.error ?? 'Error al crear la cita.');
+        this.panelError.set(e.error?.error ?? 'Error al crear la cita.');
         this.savingCita.set(false);
       },
     });
@@ -311,6 +311,68 @@ export class AgendaComponent implements OnInit {
       next: () => { this.loadAgenda(); },
       error: (e) => { this.error.set(e.error?.message ?? 'No se puede eliminar la agenda.'); },
     });
+  }
+
+  // ── Calendar toggle ───────────────────────────────────────────────────────
+  toggleCalendar(event: Event) {
+    event.stopPropagation();
+    this.calendarOpen.update(v => !v);
+  }
+
+  onCalendarDateSelected(date: Date) {
+    this.selectedDate.set(date);
+    this.calendarOpen.set(false);
+    this.loadAgenda();
+  }
+
+  @HostListener('document:click')
+  onDocClick() { this.calendarOpen.set(false); }
+
+  // ── Billing sub-panel ─────────────────────────────────────────────────────
+  openBilling() {
+    const cita = this.selectedCita();
+    if (!cita) return;
+    this.billingCantidad.set(1);
+    this.billingPrecio.set(cita.prestacion?.precio ?? 0);
+    this.billingError.set('');
+    this.billingOpen.set(true);
+  }
+
+  closeBilling() {
+    this.billingOpen.set(false);
+    this.billingError.set('');
+  }
+
+  confirmBilling() {
+    const cita = this.selectedCita();
+    const ag   = this.agenda();
+    if (!cita || !ag) return;
+    const precio   = this.billingPrecio();
+    const cantidad = this.billingCantidad();
+    const total    = cantidad * precio;
+    const nombre   = `${cita.paciente?.apellido1 ?? ''} ${cita.paciente?.nombre ?? ''}`.trim();
+    if (!confirm(`¿Desea facturar al paciente ${nombre} por un total de ${total.toFixed(2)} €?`)) return;
+    this.savingBilling.set(true);
+    this.svc.facturarCita(ag.id_agenda, cita.id_cita, { cantidad, precio }).subscribe({
+      next: (updated) => {
+        this.selectedCita.set(updated);
+        this.savingBilling.set(false);
+        this.closeBilling();
+        this.loadCitas();
+      },
+      error: (e) => {
+        this.billingError.set(e.error?.error ?? 'Error al facturar');
+        this.savingBilling.set(false);
+      },
+    });
+  }
+
+  onEstadoClick(est: EstadoCita) {
+    if (est === 'facturado') {
+      this.openBilling();
+    } else {
+      this.setEstado(est);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

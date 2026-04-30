@@ -1,0 +1,37 @@
+<div class="cal-popup">
+
+  <!-- Month navigation -->
+  <div class="cal-header">
+    <button type="button" class="cal-nav-btn" (click)="prevMonth()">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <span class="cal-month-label">{{ monthLabel() }}</span>
+    <button type="button" class="cal-nav-btn" (click)="nextMonth()">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Day-of-week header -->
+  <div class="cal-grid">
+    @for (d of DOW; track d) {
+      <div class="cal-dow">{{ d }}</div>
+    }
+
+    <!-- Day cells -->
+    @for (week of calendarWeeks(); track $index) {
+      @for (day of week; track $index) {
+        <div class="cal-cell"
+             [class.cal-cell--empty]="!day"
+             [class.cal-cell--today]="isToday(day)"
+             [class.cal-cell--selected]="isSelected(day)"
+             [class.cal-cell--has-agenda]="hasAgenda(day)"
+             (click)="selectDay(day)">
+          @if (day) {
+            <span class="cal-num">{{ day.date.getDate() }}</span>
+          }
+        </div>
+      }
+    }
+  </div>
+
+</div>

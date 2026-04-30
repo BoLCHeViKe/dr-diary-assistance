@@ -11,10 +11,58 @@ use Illuminate\Validation\Rule;
 class FacturaController extends Controller
 {
     // GET /api/facturas
-    public function index()
+    public function index(Request $request)
     {
-        $facturas = Factura::with(['lineas', 'paciente'])->get();
-        return response()->json($facturas);
+        $query = Factura::with(['lineas', 'paciente', 'abonos.lineas'])
+                        ->orderBy('num_fact', 'desc');
+
+        if ($request->filled('desde_fecha')) {
+            $query->where('fecha', '>=', $request->desde_fecha);
+        }
+        if ($request->filled('hasta_fecha')) {
+            $query->where('fecha', '<=', $request->hasta_fecha);
+        }
+        if ($request->filled('id_paciente')) {
+            $query->where('id_paciente', $request->id_paciente);
+        }
+        if ($request->filled('estados')) {
+            $estados = is_array($request->estados)
+                ? $request->estados
+                : explode(',', $request->estados);
+            $query->whereIn('estado', $estados);
+        }
+
+        $all = $query->get();
+
+        // Compute totals + per-factura importe/abonado over the ENTIRE filtered result set
+        $sumEmitidas = 0.0;
+        $sumAnuladas = 0.0;
+        $sumAbonos   = 0.0;
+        foreach ($all as $f) {
+            $importe = (float) $f->lineas->sum('total');
+            $abonado = (float) $f->abonos->sum(fn($a) => $a->lineas->sum('total'));
+            $f->importe_calc = round($importe, 2);
+            $f->abonado_calc = round($abonado, 2);
+
+            if ($f->estado === 'emitida')  $sumEmitidas += $importe;
+            if ($f->estado === 'anulada')  $sumAnuladas += $importe;
+            if ($f->estado === 'abono')    $sumAbonos   += $importe;
+        }
+
+        // Paginate in PHP (avoids a second DB query)
+        $perPage = 10;
+        $page    = max(1, (int) ($request->page ?? 1));
+        $paged   = $all->forPage($page, $perPage)->values();
+
+        return response()->json([
+            'facturas'    => $paged,
+            'total_items' => $all->count(),
+            'totales'     => [
+                'emitidas'        => round($sumEmitidas, 2),
+                'anuladas_abonos' => round($sumAnuladas + $sumAbonos, 2),
+                'neto'            => round($sumEmitidas - $sumAnuladas - $sumAbonos, 2),
+            ],
+        ]);
     }
 
     // GET /api/facturas/{num_fact}
@@ -42,22 +90,30 @@ class FacturaController extends Controller
 
         try {
             return DB::transaction(function () use ($request) {
+                // Create in borrador first — DB trigger only allows line insertion on borrador
+                $estadoFinal = $request->estado ?? 'emitida';
                 $factura = Factura::create([
                     'id_paciente' => $request->id_paciente,
                     'estado'      => 'borrador',
-                    'fecha'       => '1900-01-01',
+                    'fecha'       => $request->fecha ?? now()->toDateString(),
                     'fact_ref'    => $request->fact_ref ?? null
                 ]);
 
                 foreach ($request->lineas as $lineaData) {
                     LineaFactura::create([
                         'num_fact'   => $factura->num_fact,
-                        'cantidad'   => $lineaData['cantidad'] ?? 1,
+                        'cantidad'   => (int)($lineaData['cantidad'] ?? 1),
                         'codigo_esp' => $lineaData['codigo_esp'],
                         'id_prest'   => $lineaData['id_prest'],
                         'precio'     => 0,
-                        'total'      => 0
+                        'total'      => 0,
                     ]);
+                }
+
+                // Transition to requested estado
+                if ($estadoFinal !== 'borrador') {
+                    $factura->estado = $estadoFinal;
+                    $factura->save();
                 }
 
                 return response()->json($factura->load(['lineas', 'paciente']), 201);
@@ -137,9 +193,10 @@ class FacturaController extends Controller
     }
 
     // POST /api/facturas/{num_fact}/abono
-    public function crearAbono($num_fact)
+    // Ahora acepta un body opcional para abonos parciales
+    public function crearAbono(Request $request, $num_fact)
     {
-        $facturaOriginal = Factura::with('lineas')->find($num_fact);
+        $facturaOriginal = Factura::with(['lineas', 'abonos.lineas'])->find($num_fact);
 
         if (!$facturaOriginal) {
             return response()->json(['error' => 'Factura no encontrada'], 404);
@@ -151,23 +208,69 @@ class FacturaController extends Controller
             ], 422);
         }
 
+        // 1. Calcular cuánto queda disponible para abonar
+        $totalOriginal = $facturaOriginal->lineas->sum('total');
+        $totalYaAbonado = $facturaOriginal->abonos->reduce(function ($carry, $abono) {
+            return $carry + $abono->lineas->sum('total');
+        }, 0);
+        
+        $disponibleParaAbonar = round($totalOriginal - $totalYaAbonado, 2);
+
+        if ($disponibleParaAbonar <= 0) {
+            return response()->json(['error' => 'Esta factura ya ha sido abonada totalmente'], 422);
+        }
+
+        // 2. Determinar qué líneas vamos a abonar
+        // Si el request trae 'lineas', es un abono parcial. Si no, es total (de lo que quede).
+        $lineasAbonar = [];
+        if ($request->has('lineas')) {
+            $request->validate([
+                'lineas' => 'required|array|min:1',
+                'lineas.*.codigo_esp' => 'required|string',
+                'lineas.*.id_prest'   => 'required|integer',
+                'lineas.*.cantidad'   => 'required|integer|min:1',
+                'lineas.*.precio'     => 'required|numeric|min:0'
+            ]);
+            $lineasAbonar = $request->lineas;
+        } else {
+            // Abono total: usamos las líneas de la original
+            foreach ($facturaOriginal->lineas as $l) {
+                $lineasAbonar[] = [
+                    'codigo_esp' => $l->codigo_esp,
+                    'id_prest'   => $l->id_prest,
+                    'cantidad'   => $l->cantidad,
+                    'precio'     => $l->precio
+                ];
+            }
+        }
+
+        // 3. Validar que el nuevo abono no supere el disponible
+        $totalNuevoAbono = collect($lineasAbonar)->reduce(fn($c, $l) => $c + ($l['cantidad'] * $l['precio']), 0);
+        
+        if (round($totalNuevoAbono, 2) > $disponibleParaAbonar) {
+            return response()->json([
+                'error' => 'Importe excedido',
+                'message' => "No puedes abonar {$totalNuevoAbono}€. El máximo pendiente es {$disponibleParaAbonar}€."
+            ], 422);
+        }
+
         try {
-            return DB::transaction(function () use ($facturaOriginal) {
+            return DB::transaction(function () use ($facturaOriginal, $lineasAbonar) {
                 $abono = Factura::create([
                     'id_paciente' => $facturaOriginal->id_paciente,
                     'estado'      => 'abono',
-                    'fecha'       => '1900-01-01',
+                    'fecha'       => now()->toDateString(),
                     'fact_ref'    => $facturaOriginal->num_fact
                 ]);
 
-                foreach ($facturaOriginal->lineas as $linea) {
+                foreach ($lineasAbonar as $l) {
                     LineaFactura::create([
                         'num_fact'   => $abono->num_fact,
-                        'cantidad'   => $linea->cantidad,
-                        'codigo_esp' => $linea->codigo_esp,
-                        'id_prest'   => $linea->id_prest,
-                        'precio'     => 0,
-                        'total'      => 0
+                        'codigo_esp' => $l['codigo_esp'],
+                        'id_prest'   => $l['id_prest'],
+                        'cantidad'   => $l['cantidad'],
+                        'precio'     => $l['precio'],
+                        'total'      => $l['cantidad'] * $l['precio']
                     ]);
                 }
 

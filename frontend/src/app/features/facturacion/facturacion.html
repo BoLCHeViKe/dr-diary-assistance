@@ -1,0 +1,244 @@
+<div class="fact-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="fact-page-header mb-3">
+    <h1 class="fact-title">Facturación</h1>
+  </div>
+
+  <!-- ── Filter panel ────────────────────────────────────────────────────── -->
+  <div class="fact-filters mb-3">
+
+    <!-- Row 1: dates + patient -->
+    <div class="row g-2 mb-2">
+
+      <!-- Fecha inicio -->
+      <div class="col-12 col-sm-6 col-md-3">
+        <label class="form-label">Fecha inicio</label>
+        <div class="input-group input-group-sm">
+          <input type="date" class="form-control" [ngModel]="desde()" (ngModelChange)="desde.set($event)">
+          @if (desde()) {
+            <button class="btn btn-outline-secondary" type="button" (click)="desde.set('')" title="Quitar filtro">
+              <i class="bi bi-x"></i>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Fecha fin -->
+      <div class="col-12 col-sm-6 col-md-3">
+        <label class="form-label">Fecha fin</label>
+        <div class="input-group input-group-sm">
+          <input type="date" class="form-control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)">
+          @if (hasta()) {
+            <button class="btn btn-outline-secondary" type="button" (click)="hasta.set('')" title="Quitar filtro">
+              <i class="bi bi-x"></i>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Paciente -->
+      <div class="col-12 col-md-6" style="position:relative;">
+        <label class="form-label">Paciente</label>
+        @if (selectedPatient()) {
+          <div class="d-flex align-items-center gap-2">
+            <span class="fact-patient-tag">
+              {{ selectedPatient()!.apellido1 }} {{ selectedPatient()!.apellido2 ?? '' }},
+              {{ selectedPatient()!.nombre }}
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearPatient()">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        } @else {
+          <input type="text" class="form-control form-control-sm"
+                 placeholder="Buscar por nombre o DNI…"
+                 [value]="patientQuery()"
+                 (input)="onPatientInput($event)"
+                 (focus)="showPatientDropdown.set(true)"
+                 autocomplete="off">
+          @if (showPatientDropdown() && filteredPacientes().length > 0) {
+            <ul class="fact-autocomplete">
+              @for (p of filteredPacientes(); track p.id_paciente) {
+                <li class="fact-autocomplete__item" (click)="selectPatient(p)">
+                  <span class="fw-semibold">{{ p.apellido1 }} {{ p.apellido2 ?? '' }}</span>,
+                  {{ p.nombre }}
+                  <span class="text-muted font-monospace ms-2 small">{{ p.dni }}</span>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </div>
+
+    </div>
+
+    <!-- Row 2: estados + Restablecer (izquierda) + Buscar (derecha) -->
+    <div class="d-flex align-items-center flex-wrap gap-2">
+
+      <!-- Restablecer — far left -->
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetFilters()">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Restablecer
+      </button>
+
+      <span class="fact-filter-sep"></span>
+
+      <!-- Estado checkboxes -->
+      <span class="fact-filter-label">Estado:</span>
+      @for (est of ESTADOS; track est) {
+        <div class="form-check form-check-inline mb-0">
+          <input class="form-check-input" type="checkbox" [id]="'est-' + est"
+                 [checked]="estados().has(est)"
+                 (change)="toggleEstado(est)">
+          <label class="form-check-label fact-check-label" [for]="'est-' + est">
+            <span class="badge fact-badge {{ estadoClass(est) }}">{{ ESTADO_LABELS[est] }}</span>
+          </label>
+        </div>
+      }
+
+      <!-- Buscar — far right -->
+      <button type="button" class="btn btn-sm btn-primary ms-auto" (click)="search()">
+        <i class="bi bi-search me-1"></i>Buscar
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- ── Error ────────────────────────────────────────────────────────────── -->
+  @if (error()) {
+    <div class="alert alert-danger py-2 mb-3">{{ error() }}</div>
+  }
+
+  <!-- ── Table ────────────────────────────────────────────────────────────── -->
+  <div class="fact-card mb-3">
+
+    @if (loading()) {
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+      </div>
+    } @else if (facturas().length === 0) {
+      <div class="fact-empty">
+        <i class="bi bi-receipt"></i>
+        <span>No se encontraron facturas con los criterios aplicados</span>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table fact-table mb-0">
+          <thead>
+            <tr>
+              <th class="sortable" (click)="sort('num_fact')">
+                Nº Factura <i class="bi {{ sortIcon('num_fact') }}"></i>
+              </th>
+              <th class="sortable" (click)="sort('fecha')">
+                Fecha <i class="bi {{ sortIcon('fecha') }}"></i>
+              </th>
+              <th class="sortable" (click)="sort('paciente')">
+                Paciente <i class="bi {{ sortIcon('paciente') }}"></i>
+              </th>
+              <th class="text-end sortable" (click)="sort('importe')">
+                Importe <i class="bi {{ sortIcon('importe') }}"></i>
+              </th>
+              <th class="text-end sortable" (click)="sort('abonado')">
+                Abonado <i class="bi {{ sortIcon('abonado') }}"></i>
+              </th>
+              <th class="sortable" (click)="sort('estado')">
+                Estado <i class="bi {{ sortIcon('estado') }}"></i>
+              </th>
+              <th>Fact. Rectif.</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of sortedFacturas(); track f.num_fact) {
+              <tr>
+                <td class="font-monospace fw-semibold text-primary">#{{ f.num_fact }}</td>
+                <td>{{ f.fecha | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  @if (f.paciente) {
+                    <span class="fw-semibold">{{ f.paciente.apellido1 }} {{ f.paciente.apellido2 ?? '' }}</span>,
+                    {{ f.paciente.nombre }}
+                  } @else { — }
+                </td>
+                <td class="text-end font-monospace">
+                  {{ importe(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
+                </td>
+                <td class="text-end font-monospace text-danger">
+                  @if (abonado(f) > 0) {
+                    -{{ abonado(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
+                  } @else { — }
+                </td>
+                <td>
+                  <span class="badge fact-badge {{ estadoClass(f.estado) }}">
+                    {{ ESTADO_LABELS[f.estado] }}
+                  </span>
+                </td>
+                <td class="font-monospace text-muted">
+                  @if (f.fact_ref) { #{{ f.fact_ref }} } @else { — }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+  </div>
+
+  <!-- ── Pagination ───────────────────────────────────────────────────────── -->
+  @if (totalPages() > 1) {
+    <nav class="d-flex justify-content-center mb-3">
+      <ul class="pagination pagination-sm">
+        <li class="page-item" [class.disabled]="currentPage() === 1">
+          <button class="page-link" (click)="goPage(currentPage() - 1)">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+        </li>
+        @for (p of pages(); track $index) {
+          @if (isNumber(p)) {
+            <li class="page-item" [class.active]="p === currentPage()">
+              <button class="page-link" (click)="goPage(p)">{{ p }}</button>
+            </li>
+          } @else {
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          }
+        }
+        <li class="page-item" [class.disabled]="currentPage() === totalPages()">
+          <button class="page-link" (click)="goPage(currentPage() + 1)">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  }
+
+  <!-- ── Totals ────────────────────────────────────────────────────────────── -->
+  @if (!loading() && totalItems() > 0) {
+    <div class="fact-totals">
+      <div class="fact-total-row">
+        <span class="fact-total-label">Facturas Emitidas</span>
+        <span class="fact-total-val text-success">
+          {{ totales().emitidas | currency:'EUR':'symbol':'1.2-2':'es' }}
+        </span>
+      </div>
+      <div class="fact-total-row">
+        <span class="fact-total-label">Abonadas / Anuladas</span>
+        <span class="fact-total-val text-danger">
+          -{{ totales().anuladas_abonos | currency:'EUR':'symbol':'1.2-2':'es' }}
+        </span>
+      </div>
+      <div class="fact-total-row fact-total-row--neto">
+        <span class="fact-total-label">Facturación TOTAL</span>
+        <span class="fact-total-val"
+              [class.text-success]="totales().neto >= 0"
+              [class.text-danger]="totales().neto < 0">
+          {{ totales().neto | currency:'EUR':'symbol':'1.2-2':'es' }}
+        </span>
+      </div>
+      <div class="fact-total-note">
+        Total consulta: {{ totalItems() }} factura{{ totalItems() !== 1 ? 's' : '' }}
+        @if (totalPages() > 1) { · Página {{ currentPage() }} de {{ totalPages() }} }
+      </div>
+    </div>
+  }
+
+</div>

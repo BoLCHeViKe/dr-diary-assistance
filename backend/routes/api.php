@@ -121,6 +121,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id_cita}', [CitaController::class, 'show']);
         Route::put('/{id_cita}', [CitaController::class, 'update']);
         Route::delete('/{id_cita}', [CitaController::class, 'destroy']);
+        Route::post('/{id_cita}/facturar', [CitaController::class, 'facturar']);
     });
 
     // Consultas Híbridas (Historiales y Paneles)

@@ -15,7 +15,8 @@ class Cita extends Model
         'estado',
         'codigo_esp',
         'id_prest',
-        'id_paciente'
+        'id_paciente',
+        'num_fact',
     ];
     protected $appends = ['prestacion']; //Nos daba problemas en pintar las citas
 
@@ -28,6 +29,11 @@ class Cita extends Model
     {
         return $this->belongsTo(Paciente::class, 'id_paciente', 'id_paciente');
     }
+    public function factura()
+    {
+        return $this->belongsTo(Factura::class, 'num_fact', 'num_fact');
+    }
+
     public function getPrestacionAttribute()
     {
         return Prestacion::where('codigo_esp', $this->codigo_esp)

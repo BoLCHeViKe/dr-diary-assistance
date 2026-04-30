@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Cita;
 use App\Models\Agenda;
+use App\Models\Factura;
+use App\Models\LineaFactura;
 use App\Models\Prestacion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CitaController extends Controller
 {
@@ -121,8 +124,14 @@ class CitaController extends Controller
             return response()->json(['error' => 'Cita no encontrada'], 404);
         }
 
+        if ($cita->num_fact) {
+            return response()->json([
+                'error' => 'No se puede modificar, la cita ya ha sido facturada.',
+            ], 422);
+        }
+
         $request->validate([
-            'estado' => 'required|in:citado,en espera,validado,facturado',
+            'estado' => 'required|in:citado,en espera,atendido,facturado',
         ]);
 
         $cita->estado = $request->estado;
@@ -143,6 +152,12 @@ class CitaController extends Controller
 
         if (!$cita) {
             return response()->json(['error' => 'Cita no encontrada'], 404);
+        }
+
+        if ($cita->num_fact) {
+            return response()->json([
+                'error' => 'No se puede modificar, la cita ya ha sido facturada.',
+            ], 422);
         }
 
         if ($cita->estado !== 'citado') {
@@ -168,6 +183,92 @@ class CitaController extends Controller
                 ->orderBy('cita.h_cita', 'asc')
                 ->get()
         );
+    }
+
+    // POST /api/agendas/{id_agenda}/citas/{id_cita}/facturar
+    public function facturar(Request $request, $id_agenda, $id_cita)
+    {
+        $cita = Cita::where('id_agenda', $id_agenda)
+                    ->where('id_cita', $id_cita)
+                    ->with(['paciente'])
+                    ->first();
+
+        if (!$cita) {
+            return response()->json(['error' => 'Cita no encontrada'], 404);
+        }
+
+        if ($cita->num_fact) {
+            return response()->json(['error' => 'La cita ya ha sido facturada'], 422);
+        }
+
+        $request->validate([
+            'cantidad' => 'sometimes|integer|min:1',
+            'precio'   => 'sometimes|numeric|min:0',
+        ]);
+
+        $prestacion = Prestacion::where('codigo_esp', $cita->codigo_esp)
+                                ->where('id_prest', $cita->id_prest)
+                                ->first();
+
+        if (!$prestacion) {
+            return response()->json(['error' => 'Prestación no encontrada'], 404);
+        }
+
+        $cantidad       = (int) ($request->cantidad ?? 1);
+        $precioOriginal = (float) $prestacion->precio;
+        $precioCustom   = $request->has('precio') ? (float) $request->precio : null;
+
+        try {
+            return DB::transaction(function () use ($cita, $cantidad, $precioOriginal, $precioCustom, $prestacion) {
+                // 1. Create in 'borrador' so the DB trigger allows line insertion
+                $factura = Factura::create([
+                    'id_paciente' => $cita->id_paciente,
+                    'estado'      => 'borrador',
+                    'fecha'       => now()->toDateString(),
+                ]);
+
+                // 2. Insert line — trigger auto-fills num_linea, precio, total from prestacion
+                LineaFactura::create([
+                    'num_fact'   => $factura->num_fact,
+                    'cantidad'   => $cantidad,
+                    'codigo_esp' => $cita->codigo_esp,
+                    'id_prest'   => $cita->id_prest,
+                    'precio'     => 0,
+                    'total'      => 0,
+                ]);
+
+                // 3. If user specified a custom price, override what the trigger set
+                if ($precioCustom !== null && abs($precioCustom - $precioOriginal) > 0.001) {
+                    $customTotal = round($cantidad * $precioCustom, 2);
+                    DB::statement(
+                        'UPDATE lineafactura SET precio = ?, total = ? WHERE num_fact = ? AND num_linea = 1',
+                        [$precioCustom, $customTotal, $factura->num_fact]
+                    );
+                } elseif ($cantidad > 1) {
+                    // Trigger sets total = 1 * precio; correct it for cantidad > 1
+                    DB::statement(
+                        'UPDATE lineafactura SET cantidad = ?, total = ? WHERE num_fact = ? AND num_linea = 1',
+                        [$cantidad, round($cantidad * $precioOriginal, 2), $factura->num_fact]
+                    );
+                }
+
+                // 4. Emit the invoice
+                $factura->estado = 'emitida';
+                $factura->save();
+
+                // 5. Link cita to the invoice and mark as facturado
+                $cita->estado   = 'facturado';
+                $cita->num_fact = $factura->num_fact;
+                $cita->save();
+
+                return response()->json($cita->load(['paciente']), 201);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'error'   => 'Error al facturar la cita',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     // GET /api/medicos/{id_medico}/citas

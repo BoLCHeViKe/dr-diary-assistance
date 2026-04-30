@@ -1,5 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Paciente } from './paciente.service';
+
+export type { Paciente };
 
 export interface Agenda {
   id_agenda: number;
@@ -14,21 +17,13 @@ export interface Cita {
   id_cita: number;
   id_agenda: number;
   h_cita: string;
-  estado: 'citado' | 'en espera' | 'validado' | 'facturado';
+  estado: 'citado' | 'en espera' | 'atendido' | 'facturado';
   codigo_esp: string;
   id_prest: number;
   id_paciente: number;
+  num_fact?: number;
   paciente?: Paciente;
   prestacion?: Prestacion;
-}
-
-export interface Paciente {
-  id_paciente: number;
-  nombre: string;
-  apellido1: string;
-  apellido2?: string;
-  dni: string;
-  telf?: string;
 }
 
 export interface Especialidad {
@@ -76,8 +71,8 @@ export class AgendaService {
     return this.http.delete(`/api/agendas/${idAgenda}/citas/${idCita}`);
   }
 
-  getPacientes() {
-    return this.http.get<Paciente[]>('/api/pacientes');
+  facturarCita(idAgenda: number, idCita: number, data: { cantidad: number; precio: number }) {
+    return this.http.post<Cita>(`/api/agendas/${idAgenda}/citas/${idCita}/facturar`, data);
   }
 
   getEspecialidades() {

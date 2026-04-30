@@ -1,0 +1,197 @@
+// ── Page layout ───────────────────────────────────────────────────────────────
+.fact-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.fact-page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fact-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #04078B;
+  margin: 0;
+}
+
+// ── Filter panel ──────────────────────────────────────────────────────────────
+.fact-filters {
+  background: #fff;
+  border-radius: 0.85rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(4, 7, 139, 0.06);
+
+  .form-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+  }
+}
+
+.fact-filter-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6c757d;
+}
+
+.fact-check-label { cursor: pointer; }
+
+.fact-patient-tag {
+  background: #e8f5ff;
+  border: 1.5px solid #b3d7f7;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #04078B;
+}
+
+// ── Autocomplete ──────────────────────────────────────────────────────────────
+.fact-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  background: #fff;
+  border: 1px solid #d1dae4;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+
+  &__item {
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.1s;
+
+    &:hover { background: #f0f9ff; }
+  }
+}
+
+// ── Table card ────────────────────────────────────────────────────────────────
+.fact-card {
+  background: #fff;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(4, 7, 139, 0.07);
+}
+
+.fact-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 3rem 1rem;
+  color: #a0aec0;
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  i { font-size: 1.5rem; }
+}
+
+// ── Filter row separator ──────────────────────────────────────────────────────
+.fact-filter-sep {
+  flex: 1;
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+.fact-table {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+
+  thead th {
+    background: #1a3a6b;
+    color: #cfe7ff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    padding: 0.65rem 0.85rem;
+    border: none;
+
+    &.sortable {
+      cursor: pointer;
+      user-select: none;
+
+      i { font-size: 0.65rem; opacity: 0.55; margin-left: 4px; }
+
+      &:hover {
+        background: #152f5a;
+        i { opacity: 1; }
+      }
+    }
+  }
+
+  tbody td {
+    padding: 0.6rem 0.85rem;
+    vertical-align: middle;
+    border-color: #f0f4f8;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background 0.1s;
+    &:hover { background: #f8fbff; }
+  }
+}
+
+// ── Estado badges ─────────────────────────────────────────────────────────────
+.fact-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+
+  &--borrador { background: #adb5bd;  color: #fff; }
+  &--emitida  { background: #0092E0;  color: #fff; }
+  &--anulada  { background: #e74c3c;  color: #fff; }
+  &--abono    { background: #27ae60;  color: #fff; }
+}
+
+// ── Totals ────────────────────────────────────────────────────────────────────
+.fact-totals {
+  background: #fff;
+  border-radius: 0.85rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(4, 7, 139, 0.07);
+  max-width: 420px;
+  margin-left: auto;
+}
+
+.fact-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f0f4f8;
+  font-size: 0.875rem;
+
+  &--neto {
+    padding-top: 0.6rem;
+    border-bottom: none;
+    font-weight: 800;
+    font-size: 1rem;
+  }
+}
+
+.fact-total-label { color: #4a5568; font-weight: 600; }
+.fact-total-val   { font-family: monospace; font-size: 0.95em; font-weight: 700; }
+
+.fact-total-note {
+  font-size: 0.75rem;
+  color: #90a0b7;
+  margin-top: 0.5rem;
+  text-align: right;
+  font-weight: 600;
+}

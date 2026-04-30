@@ -1,0 +1,148 @@
+// ── Wrapper ───────────────────────────────────────────────────────────────────
+.ps-wrapper {
+  background: #fff;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(4, 7, 139, 0.06);
+}
+
+// ── Search area ───────────────────────────────────────────────────────────────
+.ps-search {
+  padding: 1rem 1rem 0.75rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+// ── Empty / hint states ───────────────────────────────────────────────────────
+.ps-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+  color: #a0aec0;
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  i { font-size: 1.3rem; }
+
+  &--warning {
+    color: #e67e22;
+
+    i { color: #e67e22; }
+  }
+}
+
+// ── Results table ─────────────────────────────────────────────────────────────
+.ps-results {
+  overflow-x: auto;
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.ps-table {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #1a3a6b;
+    color: #cfe7ff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 2px solid #0d2a55;
+    border-top: none;
+  }
+
+  tbody td {
+    padding: 0.6rem 0.85rem;
+    vertical-align: middle;
+    white-space: nowrap;
+    border-color: #f0f4f8;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s ease;
+
+    &:hover:not(.ps-row--active) { background: #e8f5ff; }
+
+    &.ps-row--active {
+      background: #dbeeff !important;
+      color: #04078B;
+      font-weight: 700;
+
+      td { border-color: #b3d7f7; }
+    }
+  }
+}
+
+// ── Clear button ──────────────────────────────────────────────────────────────
+.ps-clear-btn {
+  color: #e05c5c;
+  border-color: #f5c2c2;
+  background: #fff5f5;
+
+  &:hover {
+    background: #ffe0e0;
+    border-color: #e05c5c;
+    color: #c0392b;
+  }
+}
+
+// ── Results count ─────────────────────────────────────────────────────────────
+.ps-count {
+  padding: 0.4rem 1rem;
+  font-size: 0.78rem;
+  color: #90a0b7;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+// ── Inline mode overrides ─────────────────────────────────────────────────────
+.ps-wrapper--inline {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+
+  .ps-search {
+    padding: 0 0 0.5rem;
+    background: transparent;
+    border-bottom: none;
+  }
+
+  .ps-empty-state {
+    padding: 1rem 0;
+    font-size: 0.8rem;
+    justify-content: flex-start;
+  }
+
+  .ps-results {
+    max-height: 230px;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .ps-table {
+    font-size: 0.8rem;
+
+    thead th { font-size: 0.7rem; padding: 0.4rem 0.6rem; }
+    tbody td { padding: 0.4rem 0.6rem; }
+  }
+
+  // Force 2-column layout for fields inside narrow panels
+  .ps-col {
+    width: 50% !important;
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
+}
