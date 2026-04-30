@@ -1,8 +1,9 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FacturaService, Factura, FacturaFilters } from '../../core/services/factura.service';
 import { PacienteService, Paciente } from '../../core/services/paciente.service';
+import { GestionService, GestionEspecialidad } from '../../core/services/gestion.service';
 
 const ESTADOS_FACTURA = ['borrador', 'emitida', 'anulada', 'abono'] as const;
 type EstadoFact = typeof ESTADOS_FACTURA[number];
@@ -11,6 +12,9 @@ type SortCol    = 'num_fact' | 'fecha' | 'paciente' | 'importe' | 'abonado' | 'e
 type SortDir    = 'asc' | 'desc';
 type ActionStep = 'idle' | 'delete-confirm' | 'abono-input' | 'abono-confirm' | 'anular-confirm';
 
+const DEFAULT_COL_ORDER = ['num_fact','fecha','paciente','especialidad','importe','abonado','estado','fact_ref'] as const;
+type ColKey = typeof DEFAULT_COL_ORDER[number];
+
 @Component({
   selector: 'app-facturacion',
   imports: [CurrencyPipe, DatePipe, FormsModule],
@@ -18,8 +22,9 @@ type ActionStep = 'idle' | 'delete-confirm' | 'abono-input' | 'abono-confirm' | 
   styleUrl: './facturacion.scss',
 })
 export class FacturacionComponent implements OnInit {
-  private readonly svc     = inject(FacturaService);
-  private readonly pacSvc  = inject(PacienteService);
+  private readonly svc        = inject(FacturaService);
+  private readonly pacSvc     = inject(PacienteService);
+  private readonly gestionSvc = inject(GestionService);
 
   // ── State ─────────────────────────────────────────────────────────────────
   facturas    = signal<Factura[]>([]);
@@ -92,6 +97,93 @@ export class FacturacionComponent implements OnInit {
     ).slice(0, 12);
   });
 
+  // ── Especialidades filter ─────────────────────────────────────────────────
+  especialidades  = signal<GestionEspecialidad[]>([]);
+  espFilter       = signal<string[]>(['TODAS']);
+  espDropdownOpen = signal(false);
+
+  hasDisabledEsps = computed(() => this.especialidades().some(e => !e.activo));
+  todasEsp        = computed(() => this.espFilter().includes('TODAS'));
+
+  espLabel = computed(() => {
+    if (this.todasEsp()) return 'TODAS';
+    return this.espFilter().map(c => {
+      if (c === '__disabled__') return 'Esp. deshabilitadas';
+      return this.especialidades().find(e => e.codigo_esp === c)?.nombre ?? c;
+    }).join(', ');
+  });
+
+  toggleEspTodas() { this.espFilter.set(['TODAS']); }
+
+  toggleEspItem(codigo: string) {
+    const current = this.espFilter().filter(v => v !== 'TODAS');
+    const idx = current.indexOf(codigo);
+    if (idx >= 0) current.splice(idx, 1); else current.push(codigo);
+    this.espFilter.set(current.length > 0 ? current : ['TODAS']);
+  }
+
+  // ── Estado filter ─────────────────────────────────────────────────────────
+  estadoDropdownOpen = signal(false);
+
+  todasEstados = computed(() => this.estados().size === ESTADOS_FACTURA.length);
+
+  estadoLabel = computed(() => {
+    if (this.todasEstados()) return 'TODAS';
+    const sel = [...this.estados()];
+    if (sel.length === 0) return 'Ninguno';
+    return sel.map(e => this.ESTADO_LABELS[e]).join(', ');
+  });
+
+  toggleEstadoTodas() {
+    this.estados.set(new Set([...ESTADOS_FACTURA]));
+  }
+
+  especialidadDeFactura(f: Factura): string {
+    const codigo = f.lineas?.[0]?.codigo_esp;
+    if (!codigo) return '—';
+    const esp = this.especialidades().find(e => e.codigo_esp === codigo);
+    return esp ? esp.nombre : codigo;
+  }
+
+  // ── Column drag & drop ────────────────────────────────────────────────────
+  columnOrder    = signal<ColKey[]>([...DEFAULT_COL_ORDER]);
+  draggedColIdx  = signal<number | null>(null);
+
+  onColDragStart(index: number) { this.draggedColIdx.set(index); }
+
+  onColDragOver(event: DragEvent) { event.preventDefault(); }
+
+  onColDrop(targetIndex: number) {
+    const fromIdx = this.draggedColIdx();
+    if (fromIdx === null || fromIdx === targetIndex) { this.draggedColIdx.set(null); return; }
+    const cols = [...this.columnOrder()];
+    const [moved] = cols.splice(fromIdx, 1);
+    cols.splice(targetIndex, 0, moved);
+    this.columnOrder.set(cols);
+    this.draggedColIdx.set(null);
+  }
+
+  onColDragEnd() { this.draggedColIdx.set(null); }
+
+  readonly COL_LABELS: Record<ColKey, string> = {
+    num_fact:     'Nº Factura',
+    fecha:        'Fecha',
+    paciente:     'Paciente',
+    especialidad: 'Especialidad',
+    importe:      'Importe',
+    abonado:      'Abonado',
+    estado:       'Estado',
+    fact_ref:     'Fact. Rectif.',
+  };
+
+  isSortableCol(col: ColKey): col is SortCol {
+    return ['num_fact','fecha','paciente','importe','abonado','estado'].includes(col);
+  }
+
+  colIsNumeric(col: ColKey): boolean {
+    return col === 'importe' || col === 'abonado';
+  }
+
   // ── Filters ───────────────────────────────────────────────────────────────
   readonly ESTADOS = ESTADOS_FACTURA;
   readonly ESTADO_LABELS: Record<EstadoFact, string> = {
@@ -111,6 +203,7 @@ export class FacturacionComponent implements OnInit {
     this.setDefaultDates();
     this.load();
     this.pacSvc.getAll().subscribe(list => this.allPacientes.set(list));
+    this.gestionSvc.getEspecialidades().subscribe(list => this.especialidades.set(list));
   }
 
   private setDefaultDates() {
@@ -134,6 +227,8 @@ export class FacturacionComponent implements OnInit {
     if (this.selectedPatient()) filters.id_paciente = this.selectedPatient()!.id_paciente;
     const estArr = [...this.estados()];
     if (estArr.length > 0 && estArr.length < 4) filters.estados = estArr.join(',');
+    const espArr = this.espFilter();
+    if (!espArr.includes('TODAS')) filters.especialidades = espArr.join(',');
 
     this.svc.getFacturas(filters).subscribe({
       next: (res) => {
@@ -153,6 +248,10 @@ export class FacturacionComponent implements OnInit {
     this.estados.set(new Set(['emitida', 'anulada', 'abono']));
     this.selectedPatient.set(null);
     this.patientQuery.set('');
+    this.espFilter.set(['TODAS']);
+    this.espDropdownOpen.set(false);
+    this.estadoDropdownOpen.set(false);
+    this.columnOrder.set([...DEFAULT_COL_ORDER]);
     this.load(1);
   }
 
@@ -179,7 +278,13 @@ export class FacturacionComponent implements OnInit {
   toggleEstado(est: EstadoFact) {
     const s = new Set(this.estados());
     if (s.has(est)) s.delete(est); else s.add(est);
-    this.estados.set(s);
+    this.estados.set(s.size > 0 ? s : new Set([...ESTADOS_FACTURA]));
+  }
+
+  @HostListener('document:click')
+  onDocClick() {
+    this.espDropdownOpen.set(false);
+    this.estadoDropdownOpen.set(false);
   }
 
   // ── Patient search in filter ──────────────────────────────────────────────

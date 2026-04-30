@@ -1,0 +1,171 @@
+<div class="gestion-page">
+
+  <div class="gestion-page__header mb-3">
+    <h5 class="page-title mb-0"><i class="bi bi-people-fill me-2"></i>Gestionar Usuarios</h5>
+    <button class="btn btn-primary btn-lg btn-crear" (click)="openCreate()">
+      <i class="bi bi-person-plus-fill me-2"></i>Nuevo Usuario
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="flex-grow-1">{{ error() }}</span>
+      <button class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th class="text-center">Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of usuarios(); track u.id) {
+          <tr [class.table-secondary]="!u.activo">
+            <td>
+              <span [class.text-muted]="!u.activo">
+                {{ u.apellido1 }}{{ u.apellido2 ? ' ' + u.apellido2 : '' }}, {{ u.nombre }}
+              </span>
+            </td>
+            <td class="small text-muted">{{ u.email }}</td>
+            <td><span class="badge bg-primary-subtle text-primary-emphasis">{{ rolNombre(u.id_rol) }}</span></td>
+            <td class="text-center">
+              @if (u.activo) {
+                <span class="badge bg-success">Activo</span>
+              } @else {
+                <span class="badge bg-secondary">Inactivo</span>
+              }
+            </td>
+            <td class="text-end">
+              <button class="btn btn-xs btn-outline-primary me-1" (click)="openEdit(u)">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              @if (u.id !== 1) {
+                <button class="btn btn-xs"
+                        [class.btn-outline-danger]="u.activo"
+                        [class.btn-outline-success]="!u.activo"
+                        (click)="toggleActivo(u)"
+                        [title]="u.activo ? 'Deshabilitar' : 'Habilitar'">
+                  <i class="bi" [class.bi-person-slash]="u.activo" [class.bi-person-check]="!u.activo"></i>
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Panel lateral ──────────────────────────────────────────────────────── -->
+  @if (panelMode()) {
+    <div class="panel-backdrop" (click)="closePanel()"></div>
+    <div class="side-panel">
+
+      <div class="panel-header">
+        @if (panelMode() === 'create') { <span>Nuevo usuario</span> }
+        @if (panelMode() === 'edit')   { <span>Editar: <strong>{{ editingUser()?.apellido1 }}</strong></span> }
+        <button class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="panel-body">
+
+        @if (formError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ formError() }}
+          </div>
+        }
+
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="nombre" maxlength="30"
+                   [class.is-invalid]="form.get('nombre')!.invalid && form.get('nombre')!.touched">
+            <div class="invalid-feedback">Obligatorio</div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Apellido 1 <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="apellido1" maxlength="30"
+                   [class.is-invalid]="form.get('apellido1')!.invalid && form.get('apellido1')!.touched">
+            <div class="invalid-feedback">Obligatorio</div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Apellido 2</label>
+            <input type="text" class="form-control" formControlName="apellido2" maxlength="30">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" formControlName="email"
+                   [class.is-invalid]="form.get('email')!.invalid && form.get('email')!.touched">
+            <div class="invalid-feedback">Email válido requerido</div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">
+              Contraseña
+              @if (panelMode() === 'create') { <span class="text-danger">*</span> }
+              @else { <span class="text-muted small">(dejar en blanco para no cambiar)</span> }
+            </label>
+            <input type="password" class="form-control" formControlName="password"
+                   [class.is-invalid]="form.get('password')!.invalid && form.get('password')!.touched">
+            <div class="invalid-feedback">Mínimo 8 caracteres</div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">DNI</label>
+            <input type="text" class="form-control font-monospace text-uppercase"
+                   formControlName="dni" placeholder="00000000A" maxlength="9"
+                   [class.is-invalid]="form.get('dni')!.invalid && form.get('dni')!.touched">
+            <div class="invalid-feedback">Formato: 8 dígitos + letra</div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" class="form-control" formControlName="telf" maxlength="13">
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label">Fecha nacimiento</label>
+            <input type="date" class="form-control" formControlName="fecha_nac">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-control" formControlName="direccion" maxlength="100">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Rol <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="id_rol">
+              @for (rol of roles(); track rol.id) {
+                <option [value]="rol.id">{{ rol.tipo }}</option>
+              }
+            </select>
+          </div>
+          @if (form.get('id_rol')!.value == 2) {
+            <div class="col-12">
+              <label class="form-label">Nº Colegiado</label>
+              <input type="text" class="form-control" formControlName="num_col" maxlength="10">
+            </div>
+          }
+          @if (form.get('id_rol')!.value == 1) {
+            <div class="col-12">
+              <label class="form-label">Nº Autorización Admin</label>
+              <input type="text" class="form-control" formControlName="num_auto" maxlength="10">
+            </div>
+          }
+        </div>
+
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            @if (panelMode() === 'create') { Crear usuario }
+            @if (panelMode() === 'edit')   { Guardar cambios }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+
+</div>

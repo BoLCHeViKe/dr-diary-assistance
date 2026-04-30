@@ -63,6 +63,13 @@
       <i class="bi bi-person-x"></i>
       <span>No se encontraron pacientes con esos criterios</span>
     </div>
+    @if (mode === 'inline') {
+      <div class="text-center mt-1">
+        <small class="text-muted">¿No existe el paciente?
+          <a href="#" class="link-secondary" (click)="crearPaciente.emit(); $event.preventDefault()">Crear paciente</a>
+        </small>
+      </div>
+    }
   }
 
   <!-- ── Results table ──────────────────────────────────────────────────── -->

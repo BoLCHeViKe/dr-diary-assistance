@@ -23,8 +23,16 @@ class Prestacion extends Model
         'id_prest',
         'nombre',
         'descripcion',
-        'precio'
+        'precio',
+        'activo',
     ];
+
+    protected $casts = ['activo' => 'boolean'];
+
+    public function scopeActivas($query)
+    {
+        return $query->where('activo', true);
+    }
 
     /**
      * Relación con Especialidad

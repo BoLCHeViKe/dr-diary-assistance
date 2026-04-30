@@ -10,9 +10,10 @@ class DetalleHc extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'num_orden',// Lo añadimos por si acaso, aunque lo gestione el trigger
+        'num_orden',
         'nhc',
-        'id_cita',// <-- ¡FUNDAMENTAL añadirlo aquí!
+        'id_cita',
+        'mov_consulta',
         'tto',
         'f_consulta',
         'sinto',

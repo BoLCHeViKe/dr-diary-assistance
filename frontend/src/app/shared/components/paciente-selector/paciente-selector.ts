@@ -14,8 +14,9 @@ export class PacienteSelectorComponent implements OnInit {
   // Trigger a reload when parent increments this value (used after CRUD)
   @Input() set refreshTrigger(v: number) { if (v > 0) this.loadPacientes(); }
 
-  @Output() seleccionado = new EventEmitter<Paciente>(); // single click
-  @Output() abierto      = new EventEmitter<Paciente>(); // double click (page mode → edit)
+  @Output() seleccionado  = new EventEmitter<Paciente>(); // single click
+  @Output() abierto       = new EventEmitter<Paciente>(); // double click (page mode → edit)
+  @Output() crearPaciente = new EventEmitter<void>();     // inline mode → create patient link
 
   // ── State ─────────────────────────────────────────────────────────────────
   allPacientes = signal<Paciente[]>([]);

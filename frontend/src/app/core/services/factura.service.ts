@@ -37,11 +37,12 @@ export interface FacturasResponse {
 }
 
 export interface FacturaFilters {
-  desde_fecha?:  string;
-  hasta_fecha?:  string;
-  id_paciente?:  number;
-  estados?:      string;
-  page?:         number;
+  desde_fecha?:    string;
+  hasta_fecha?:    string;
+  id_paciente?:    number;
+  estados?:        string;
+  especialidades?: string;
+  page?:           number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,8 +54,9 @@ export class FacturaService {
     if (filters.desde_fecha) params = params.set('desde_fecha', filters.desde_fecha);
     if (filters.hasta_fecha) params = params.set('hasta_fecha',  filters.hasta_fecha);
     if (filters.id_paciente) params = params.set('id_paciente',  filters.id_paciente);
-    if (filters.estados)     params = params.set('estados',       filters.estados);
-    if (filters.page)        params = params.set('page',          filters.page);
+    if (filters.estados)        params = params.set('estados',        filters.estados);
+    if (filters.especialidades) params = params.set('especialidades', filters.especialidades);
+    if (filters.page)           params = params.set('page',           filters.page);
     return this.http.get<FacturasResponse>('/api/facturas', { params });
   }
 

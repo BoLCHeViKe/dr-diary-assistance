@@ -42,7 +42,8 @@
         <button class="btn btn-sm btn-outline-danger" (click)="deletePaciente()">
           <i class="bi bi-trash me-1"></i>Eliminar paciente
         </button>
-        <button class="btn btn-sm btn-outline-secondary" disabled title="Próximamente">
+        <button class="btn btn-sm btn-outline-secondary" (click)="verHC()"
+                [disabled]="!pacienteActivo()!.nhc">
           <i class="bi bi-folder2-open me-1"></i>Ver H.C.
         </button>
       </div>
@@ -56,13 +57,27 @@
 
       <!-- Panel header -->
       <div class="panel-header">
-        @if (panelMode() === 'create') { <span>Nuevo paciente</span> }
-        @if (panelMode() === 'edit')   { <span>Editar paciente</span> }
+        @if (panelMode() === 'create')   { <span>Nuevo paciente</span> }
+        @if (panelMode() === 'edit')     { <span>Editar paciente</span> }
+        @if (panelMode() === 'view-hc')  { <span>Historia Clínica · <strong>{{ pacienteActivo()?.apellido1 }}</strong></span> }
         <button type="button" class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
       </div>
 
+      <!-- ── VIEW HC ─────────────────────────────────────────────────────── -->
+      @if (panelMode() === 'view-hc' && pacienteActivo()?.nhc) {
+        <div class="panel-body">
+          <app-historia-clinica
+            [nhc]="pacienteActivo()!.nhc!"
+            [idPaciente]="pacienteActivo()!.id_paciente"
+            modoInicial="ver"
+            (cerrar)="closePanel()" />
+        </div>
+      }
+
       <!-- Form -->
-      <form [formGroup]="form" (ngSubmit)="submitForm()" class="panel-body">
+      <form [formGroup]="form" (ngSubmit)="submitForm()" class="panel-body"
+            [style.display]="panelMode() === 'view-hc' ? 'none' : ''"
+            [attr.hidden]="panelMode() === 'view-hc' ? true : null">
 
         @if (formError()) {
           <div class="alert alert-danger py-2 small mb-3">

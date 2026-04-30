@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -12,22 +11,24 @@ use Illuminate\Validation\Rule;
 
 class UsuarioController extends Controller
 {
-    // GET /api/usuarios
-    public function index()
+    // GET /api/usuarios          → solo activos
+    // GET /api/usuarios?todos=1  → todos (activos + desactivados)
+    public function index(Request $request)
     {
-        $usuarios = User::with(['rol', 'medico', 'admin'])->get();
-        return response()->json($usuarios);
+        $query = User::with(['rol', 'medico', 'admin']);
+
+        if (!$request->boolean('todos')) {
+            $query->where('activo', true);
+        }
+
+        return response()->json($query->get());
     }
 
     // GET /api/usuarios/{id}
     public function show($id)
     {
         $usuario = User::with(['rol', 'medico', 'admin'])->find($id);
-
-        if (!$usuario) {
-            return response()->json(['error' => 'Usuario no encontrado'], 404);
-        }
-
+        if (!$usuario) return response()->json(['error' => 'Usuario no encontrado'], 404);
         return response()->json($usuario);
     }
 
@@ -41,11 +42,9 @@ class UsuarioController extends Controller
             'email'     => 'required|email:rfc|unique:users,email',
             'password'  => 'required|min:8',
             'dni'       => [
-                            'required',
-                            'string',
-                            'unique:users,dni',
-                            'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
-                        ],
+                'required', 'string', 'unique:users,dni',
+                'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
+            ],
             'fecha_nac' => 'sometimes|nullable|date',
             'telf'      => 'sometimes|nullable|string|max:13',
             'direccion' => 'sometimes|nullable|string|max:100',
@@ -61,33 +60,25 @@ class UsuarioController extends Controller
                     'apellido1' => $request->apellido1,
                     'apellido2' => $request->apellido2,
                     'email'     => $request->email,
-                    'password'  => $request->password, // el cast del modelo lo hashea
+                    'password'  => $request->password,
                     'dni'       => $request->dni,
                     'fecha_nac' => $request->fecha_nac,
                     'telf'      => $request->telf,
                     'direccion' => $request->direccion,
                     'id_rol'    => $request->id_rol,
+                    'activo'    => true,
                 ]);
 
                 if ($user->id_rol == 1) {
-                    Admin::create([
-                        'id'       => $user->id,
-                        'num_auto' => $request->num_auto
-                    ]);
+                    Admin::create(['id' => $user->id, 'num_auto' => $request->num_auto]);
                 } elseif ($user->id_rol == 2) {
-                    Medico::create([
-                        'id'      => $user->id,
-                        'num_col' => $request->num_col
-                    ]);
+                    Medico::create(['id' => $user->id, 'num_col' => $request->num_col]);
                 }
 
                 return response()->json($user->load(['rol', 'medico', 'admin']), 201);
             });
         } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'Error al crear el usuario',
-                'message' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Error al crear el usuario', 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -95,30 +86,25 @@ class UsuarioController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::find($id);
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 404);
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        // No se puede desactivar al admin principal
+        if ($id == 1 && $request->has('activo') && !$request->boolean('activo')) {
+            return response()->json(['error' => 'El administrador principal no puede desactivarse.'], 403);
         }
 
         $request->validate([
             'nombre'    => 'sometimes|string|max:30',
             'apellido1' => 'sometimes|string|max:30',
             'apellido2' => 'sometimes|nullable|string|max:30',
-            'email'     => [
-                'sometimes',
-                'email:rfc',
-                Rule::unique('users', 'email')->ignore($id)
-            ],
+            'email'     => ['sometimes', 'email:rfc', Rule::unique('users', 'email')->ignore($id)],
             'password'  => 'sometimes|min:8',
-            'dni'       => [
-                'sometimes',
-                'string',
-                Rule::unique('users', 'dni')->ignore($id),
-                'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'
-            ],
+            'dni'       => ['sometimes', 'string', Rule::unique('users', 'dni')->ignore($id), 'regex:/^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i'],
             'fecha_nac' => 'sometimes|nullable|date',
             'telf'      => 'sometimes|nullable|string|max:13',
             'direccion' => 'sometimes|nullable|string|max:100',
+            'id_rol'    => 'sometimes|exists:rol,id',
+            'activo'    => 'sometimes|boolean',
             'num_col'   => 'sometimes|string|max:10',
             'num_auto'  => 'sometimes|string|max:10',
         ]);
@@ -126,7 +112,8 @@ class UsuarioController extends Controller
         try {
             DB::transaction(function () use ($request, $user) {
                 $user->update($request->only([
-                    'nombre', 'apellido1', 'apellido2', 'email', 'dni', 'fecha_nac','telf','direccion'
+                    'nombre', 'apellido1', 'apellido2', 'email',
+                    'dni', 'fecha_nac', 'telf', 'direccion', 'id_rol', 'activo',
                 ]));
 
                 if ($request->has('password')) {
@@ -143,46 +130,24 @@ class UsuarioController extends Controller
 
             return response()->json($user->fresh()->load(['rol', 'medico', 'admin']));
         } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'Error al actualizar el usuario',
-                'message' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Error al actualizar el usuario', 'message' => $e->getMessage()], 500);
         }
     }
-    
-    // DELETE /api/usuarios/{id}
+
+    // DELETE /api/usuarios/{id}  → soft-disable (activo = false)
     public function destroy($id)
     {
-        // Protección del administrador principal
         if ($id == 1) {
-            return response()->json([
-                'error'   => 'Acción prohibida',
-                'message' => 'El administrador principal no puede ser eliminado.'
-            ], 403);
+            return response()->json(['error' => 'El administrador principal no puede desactivarse.'], 403);
         }
 
         $user = User::find($id);
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 404);
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 404);
-        }
+        $user->update(['activo' => false]);
+        // Invalidar todos sus tokens activos
+        $user->tokens()->delete();
 
-        try {
-            DB::transaction(function () use ($user) {
-                // CASCADE en BD lo hace automáticamente,
-                // pero lo hacemos explícito como doble seguridad
-                if ($user->id_rol == 1) Admin::where('id', $user->id)->delete();
-                if ($user->id_rol == 2) Medico::where('id', $user->id)->delete();
-
-                $user->delete();
-            });
-
-            return response()->json(['message' => 'Usuario eliminado correctamente']);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error'   => 'Error al eliminar el usuario',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json(['message' => 'Usuario desactivado correctamente']);
     }
 }

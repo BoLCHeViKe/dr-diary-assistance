@@ -52,11 +52,12 @@ class DetalleHcController extends Controller
         }
 
         $request->validate([
-            'tto'        => 'required|string|max:60',
-            'f_consulta' => 'nullable|date',
-            'sinto'      => 'nullable|string',
-            'diag'       => 'nullable|string|max:80',
-            'id_cita'    => 'nullable|exists:cita,id_cita',
+            'mov_consulta' => 'required|string|max:32',
+            'tto'          => 'nullable|string|max:60',
+            'f_consulta'   => 'nullable|date',
+            'sinto'        => 'nullable|string',
+            'diag'         => 'nullable|string|max:80',
+            'id_cita'      => 'nullable|exists:cita,id_cita',
         ]);
 
         // Si viene id_cita, verificamos que la cita pertenece al paciente de esta HC
@@ -80,12 +81,13 @@ class DetalleHcController extends Controller
         // El trigger trg_detallehc_num_orden_auto asigna num_orden automáticamente
         // El trigger trg_detallehc_comprobar_fecha_ins valida f_consulta
         $detalle = DetalleHc::create([
-            'nhc'        => $nhc,
-            'id_cita'    => $request->id_cita ?? null,
-            'tto'        => trim($request->tto),
-            'f_consulta' => $request->f_consulta ?? '1900-01-01', // el trigger lo gestiona
-            'sinto'      => $request->sinto,
-            'diag'       => $request->diag,
+            'nhc'          => $nhc,
+            'id_cita'      => $request->id_cita ?? null,
+            'mov_consulta' => trim($request->mov_consulta),
+            'tto'          => $request->tto ? trim($request->tto) : null,
+            'f_consulta'   => $request->f_consulta ?? '1900-01-01',
+            'sinto'        => $request->sinto,
+            'diag'         => $request->diag,
         ]);
 
         return response()->json($detalle->load(['cita.agenda', 'cita.paciente']), 201);
@@ -102,17 +104,28 @@ class DetalleHcController extends Controller
             return response()->json(['error' => 'Detalle hc no encontrado'], 404);
         }
 
+        // Verificar autoría: solo el médico que atendió puede editar
+        if ($detalle->id_cita) {
+            $cita = Cita::with('agenda')->find($detalle->id_cita);
+            if ($cita && $cita->agenda && $cita->agenda->id_med !== auth()->id()) {
+                return response()->json([
+                    'error' => 'No fue atendido por usted, el informe del paciente no puede ser editado'
+                ], 403);
+            }
+        }
+
         $request->validate([
-            'tto'        => 'sometimes|string|max:60',
-            'f_consulta' => 'sometimes|date',
-            'sinto'      => 'sometimes|nullable|string',
-            'diag'       => 'sometimes|nullable|string|max:80',
+            'mov_consulta' => 'sometimes|required|string|max:32',
+            'tto'          => 'sometimes|nullable|string|max:60',
+            'f_consulta'   => 'sometimes|date',
+            'sinto'        => 'sometimes|nullable|string',
+            'diag'         => 'sometimes|nullable|string|max:80',
         ]);
 
         // Actualizamos campo por campo usando where() por la PK compuesta
         DetalleHc::where('nhc', $nhc)
                  ->where('num_orden', $num_orden)
-                 ->update($request->only(['tto', 'f_consulta', 'sinto', 'diag']));
+                 ->update($request->only(['mov_consulta', 'tto', 'f_consulta', 'sinto', 'diag']));
 
         // Recargamos el detalle actualizado
         $detalle = DetalleHc::where('nhc', $nhc)

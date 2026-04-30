@@ -93,6 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{codigo_esp}', [EspecialidadController::class, 'show']);
         Route::post('/', [EspecialidadController::class, 'store']);
         Route::put('/{codigo_esp}', [EspecialidadController::class, 'update']);
+        Route::patch('/{codigo_esp}/toggle', [EspecialidadController::class, 'toggleActivo']);
         Route::delete('/{codigo_esp}', [EspecialidadController::class, 'destroy']);
     });
     // Agrupamos las rutas de PRESTACION
@@ -101,6 +102,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'show']);
         Route::post('/', [PrestacionController::class, 'store']);
         Route::put('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'update']);
+        Route::patch('/{codigo_esp}/{id_prest}/toggle', [PrestacionController::class, 'toggleActivo']);
         Route::delete('/{codigo_esp}/{id_prest}', [PrestacionController::class, 'destroy']);
     });
 
@@ -127,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Consultas Híbridas (Historiales y Paneles)
     Route::get('pacientes/{id_paciente}/citas', [CitaController::class, 'citasPorPaciente']);
     Route::get('medicos/{id_medico}/citas', [CitaController::class, 'citasPorMedico']);
+    Route::get('pacientes/{id_paciente}/hc', [HcController::class, 'showByPaciente']);
 
     // Agrupamos las rutas de HISTORIAS CLINICAS
     //store()   → lo hace PacienteController automáticamente

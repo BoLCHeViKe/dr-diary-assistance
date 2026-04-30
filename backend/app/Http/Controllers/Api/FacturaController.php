@@ -31,6 +31,19 @@ class FacturaController extends Controller
                 : explode(',', $request->estados);
             $query->whereIn('estado', $estados);
         }
+        if ($request->filled('especialidades')) {
+            $especialidades = is_array($request->especialidades)
+                ? $request->especialidades
+                : explode(',', $request->especialidades);
+            if (in_array('__disabled__', $especialidades)) {
+                $especialidades = array_values(array_filter($especialidades, fn($e) => $e !== '__disabled__'));
+                $disabledCodes  = \App\Models\Especialidad::where('activo', false)->pluck('codigo_esp')->toArray();
+                $especialidades = array_merge($especialidades, $disabledCodes);
+            }
+            if (!empty($especialidades)) {
+                $query->whereHas('lineas', fn($q) => $q->whereIn('codigo_esp', $especialidades));
+            }
+        }
 
         $all = $query->get();
 

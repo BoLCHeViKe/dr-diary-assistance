@@ -1,0 +1,123 @@
+<div class="gestion-page">
+
+  <div class="gestion-page__header mb-3">
+    <h5 class="page-title mb-0"><i class="bi bi-shield-lock-fill me-2"></i>Gestionar Roles</h5>
+    <button class="btn btn-primary btn-lg btn-crear" (click)="openCreate()">
+      <i class="bi bi-plus-lg me-2"></i>Nuevo Rol
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="flex-grow-1">{{ error() }}</span>
+      <button class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Rol</th>
+          <th class="text-center">Permisos activos</th>
+          <th class="text-center">Usuarios</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (rol of roles(); track rol.id) {
+          <tr>
+            <td>
+              <span class="fw-bold">{{ rol.tipo }}</span>
+              @if (rol.id === 1) { <span class="badge bg-danger ms-2">ADMIN</span> }
+              @if (rol.id === 2) { <span class="badge bg-primary ms-2">MÉDICO</span> }
+            </td>
+            <td class="text-center">
+              @if (rol.id === 1) {
+                <span class="text-success small fw-bold">Todos</span>
+              } @else {
+                <span class="text-muted small">{{ permCount(rol) }} / 9</span>
+              }
+            </td>
+            <td class="text-center">
+              <span class="badge bg-secondary">{{ rol.usuarios_count ?? 0 }}</span>
+            </td>
+            <td class="text-end">
+              @if (rol.id !== 1) {
+                <button class="btn btn-xs btn-outline-primary me-1" (click)="openEdit(rol)">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+              }
+              @if (!isProtected(rol)) {
+                <button class="btn btn-xs btn-outline-danger" (click)="delete(rol)"
+                        [disabled]="(rol.usuarios_count ?? 0) > 0"
+                        [title]="(rol.usuarios_count ?? 0) > 0 ? 'Tiene usuarios asignados' : 'Eliminar'">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Panel lateral ──────────────────────────────────────────────────────── -->
+  @if (panelMode()) {
+    <div class="panel-backdrop" (click)="closePanel()"></div>
+    <div class="side-panel">
+
+      <div class="panel-header">
+        @if (panelMode() === 'create') { <span>Nuevo rol</span> }
+        @if (panelMode() === 'edit')   { <span>Editar rol: <strong>{{ editingRol()?.tipo }}</strong></span> }
+        <button class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="panel-body">
+
+        @if (formError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ formError() }}
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label">Nombre del rol <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="tipo" maxlength="20"
+                 [class.is-invalid]="form.get('tipo')!.invalid && form.get('tipo')!.touched">
+          <div class="invalid-feedback">Obligatorio (máx. 20 caracteres)</div>
+        </div>
+
+        <hr class="my-3">
+        <p class="form-label mb-2">Permisos</p>
+
+        @for (group of permGroups; track group.label) {
+          <div class="perm-group mb-3">
+            <div class="perm-group__label">{{ group.label }}</div>
+            @for (perm of group.perms; track perm.key) {
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       [id]="perm.key" [formControlName]="perm.key">
+                <label class="form-check-label" [for]="perm.key">{{ perm.label }}</label>
+                @if (form.get(perm.key)?.disabled) {
+                  <span class="badge bg-secondary ms-2 small">mínimo</span>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            @if (panelMode() === 'create') { Crear rol }
+            @if (panelMode() === 'edit')   { Guardar cambios }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+
+</div>

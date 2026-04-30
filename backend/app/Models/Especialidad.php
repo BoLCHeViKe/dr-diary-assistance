@@ -12,8 +12,16 @@ class Especialidad extends Model
 
     protected $fillable = [
         'codigo_esp',
-        'nombre'
+        'nombre',
+        'activo',
     ];
+
+    protected $casts = ['activo' => 'boolean'];
+
+    public function scopeActivas($query)
+    {
+        return $query->where('activo', true);
+    }
 
     public function prestaciones()
     {

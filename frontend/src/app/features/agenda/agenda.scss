@@ -9,7 +9,6 @@
 .agenda-main {
   flex: 1;
   min-width: 0;
-  max-width: 800px;
 }
 
 // ── Sidebar (desktop calendar) ────────────────────────────────────────────────
@@ -59,6 +58,14 @@
   color: #04078B;
   text-transform: capitalize;
   line-height: 1.2;
+}
+
+.agenda-medico-select {
+  max-width: 240px;
+  margin: 0.25rem auto 0;
+  font-size: 0.78rem;
+  border-color: #e2e8f0;
+  border-radius: 0.4rem;
 }
 
 .agenda-date-input {
@@ -203,12 +210,62 @@
       text-overflow: ellipsis;
     }
 
-    .slot-badge {
+    .slot-telf {
+      display: block;
+      font-size: 0.75rem;
+      color: #a0aec0;
+      margin-top: 0.1rem;
+    }
+
+    .slot-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.35rem;
       flex-shrink: 0;
+    }
+
+    .slot-badge {
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
+
+    .slot-actions {
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    &:hover .slot-actions {
+      opacity: 1;
+    }
+  }
+}
+
+.btn-slot-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: #f0f4f8;
+  border-radius: 6px;
+  color: #5a6a7a;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #e2eef8;
+    color: #04078B;
+  }
+
+  &--danger:hover {
+    background: #fde8e8;
+    color: #e53e3e;
   }
 }
 

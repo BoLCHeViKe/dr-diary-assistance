@@ -130,6 +130,31 @@ class CitaController extends Controller
             ], 422);
         }
 
+        // Edición de campos de la cita (paciente, especialidad, prestación)
+        if ($request->has('id_paciente') || $request->has('codigo_esp') || $request->has('id_prest')) {
+            $request->validate([
+                'id_paciente' => 'required|exists:paciente,id_paciente',
+                'codigo_esp'  => 'required|string|exists:especialidad,codigo_esp',
+                'id_prest'    => 'required|integer',
+            ]);
+
+            $prestacion = Prestacion::where('codigo_esp', $request->codigo_esp)
+                                    ->where('id_prest', $request->id_prest)
+                                    ->first();
+
+            if (!$prestacion) {
+                return response()->json(['error' => 'La prestación no existe para esta especialidad'], 404);
+            }
+
+            $cita->id_paciente = $request->id_paciente;
+            $cita->codigo_esp  = $request->codigo_esp;
+            $cita->id_prest    = $request->id_prest;
+            $cita->save();
+
+            return response()->json($cita->load(['paciente']));
+        }
+
+        // Actualización de estado
         $request->validate([
             'estado' => 'required|in:citado,en espera,atendido,facturado',
         ]);
@@ -156,14 +181,19 @@ class CitaController extends Controller
 
         if ($cita->num_fact) {
             return response()->json([
-                'error' => 'No se puede modificar, la cita ya ha sido facturada.',
+                'error' => '¡El/la paciente ya ha sido facturado/a!'
             ], 422);
         }
 
-        if ($cita->estado !== 'citado') {
+        if ($cita->estado === 'atendido') {
             return response()->json([
-                'error'   => 'No se puede eliminar',
-                'message' => 'Solo se pueden cancelar citas en estado "citado".'
+                'error' => 'El paciente ya ha sido atendido, no se puede eliminar la cita'
+            ], 422);
+        }
+
+        if (!in_array($cita->estado, ['citado', 'en espera'])) {
+            return response()->json([
+                'error' => 'No se puede eliminar la cita en el estado actual'
             ], 422);
         }
 

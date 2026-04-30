@@ -1,0 +1,130 @@
+<div class="gestion-page">
+
+  <div class="gestion-page__header mb-3">
+    <h5 class="page-title mb-0"><i class="bi bi-clipboard2-pulse-fill me-2"></i>Gestionar Prestaciones</h5>
+    <button class="btn btn-primary btn-lg btn-crear" (click)="openCreate()">
+      <i class="bi bi-plus-lg me-2"></i>Nueva Prestación
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="flex-grow-1">{{ error() }}</span>
+      <button class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <!-- Filtro especialidad -->
+  <div class="mb-3">
+    <select class="form-select form-select-sm w-auto d-inline-block"
+            [value]="filtroEsp()"
+            (change)="filtroEsp.set($any($event.target).value)">
+      <option value="">Todas las especialidades</option>
+      @for (esp of especialidades(); track esp.codigo_esp) {
+        <option [value]="esp.codigo_esp">{{ esp.codigo_esp }} — {{ esp.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Especialidad</th>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th class="text-end">Precio</th>
+          <th class="text-center">Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of prestacionesFiltradas(); track p.codigo_esp + '-' + p.id_prest) {
+          <tr [class.table-secondary]="!p.activo">
+            <td class="font-monospace small fw-bold text-primary">{{ p.codigo_esp }}</td>
+            <td class="text-muted small">{{ p.id_prest }}</td>
+            <td [class.text-muted]="!p.activo">{{ p.nombre }}</td>
+            <td class="text-muted small" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              {{ p.descripcion || '—' }}
+            </td>
+            <td class="text-end font-monospace small">{{ p.precio | currency:'EUR':'symbol':'1.2-2':'es' }}</td>
+            <td class="text-center">
+              @if (p.activo) {
+                <span class="badge bg-success">Activa</span>
+              } @else {
+                <span class="badge bg-secondary">Inactiva</span>
+              }
+            </td>
+            <td class="text-end">
+              <button class="btn btn-xs btn-outline-primary me-1" (click)="openEdit(p)">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-xs"
+                      [class.btn-outline-danger]="p.activo"
+                      [class.btn-outline-success]="!p.activo"
+                      (click)="toggle(p)"
+                      [title]="p.activo ? 'Deshabilitar' : 'Habilitar'">
+                <i class="bi" [class.bi-toggle-on]="p.activo" [class.bi-toggle-off]="!p.activo"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (panelMode()) {
+    <div class="panel-backdrop" (click)="closePanel()"></div>
+    <div class="side-panel">
+      <div class="panel-header">
+        @if (panelMode() === 'create') { <span>Nueva prestación</span> }
+        @if (panelMode() === 'edit')   { <span>Editar: <strong>{{ editingPrest()?.nombre }}</strong></span> }
+        <button class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="panel-body">
+        @if (formError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ formError() }}
+          </div>
+        }
+        <div class="mb-3">
+          <label class="form-label">Especialidad <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="codigo_esp"
+                  [class.is-invalid]="form.get('codigo_esp')!.invalid && form.get('codigo_esp')!.touched">
+            <option value="">— Seleccionar —</option>
+            @for (esp of especialidades(); track esp.codigo_esp) {
+              <option [value]="esp.codigo_esp">{{ esp.codigo_esp }} — {{ esp.nombre }}</option>
+            }
+          </select>
+          <div class="invalid-feedback">Obligatorio</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nombre <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="nombre" maxlength="30"
+                 [class.is-invalid]="form.get('nombre')!.invalid && form.get('nombre')!.touched">
+          <div class="invalid-feedback">Obligatorio</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-control" formControlName="descripcion" maxlength="80">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Precio (€) <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" formControlName="precio" min="0" step="0.01"
+                 [class.is-invalid]="form.get('precio')!.invalid && form.get('precio')!.touched">
+          <div class="invalid-feedback">Obligatorio, mayor o igual a 0</div>
+        </div>
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            @if (panelMode() === 'create') { Crear prestación }
+            @if (panelMode() === 'edit')   { Guardar cambios }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+</div>

@@ -26,6 +26,18 @@ export interface Cita {
   prestacion?: Prestacion;
 }
 
+export interface Medico {
+  id: number;
+  num_col?: string;
+  usuario: {
+    id: number;
+    nombre: string;
+    apellido1: string;
+    apellido2?: string;
+  };
+  agendas?: Agenda[];
+}
+
 export interface Especialidad {
   codigo_esp: string;
   nombre: string;
@@ -67,12 +79,20 @@ export class AgendaService {
     return this.http.put<Cita>(`/api/agendas/${idAgenda}/citas/${idCita}`, { estado });
   }
 
+  updateCita(idAgenda: number, idCita: number, data: { id_paciente: number; codigo_esp: string; id_prest: number }) {
+    return this.http.put<Cita>(`/api/agendas/${idAgenda}/citas/${idCita}`, data);
+  }
+
   deleteCita(idAgenda: number, idCita: number) {
     return this.http.delete(`/api/agendas/${idAgenda}/citas/${idCita}`);
   }
 
   facturarCita(idAgenda: number, idCita: number, data: { cantidad: number; precio: number }) {
     return this.http.post<Cita>(`/api/agendas/${idAgenda}/citas/${idCita}/facturar`, data);
+  }
+
+  getMedicos() {
+    return this.http.get<Medico[]>('/api/medicos');
   }
 
   getEspecialidades() {

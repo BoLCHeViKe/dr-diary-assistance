@@ -1,0 +1,20 @@
+.perm-group {
+  &__label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c757d;
+    margin-bottom: 0.4rem;
+  }
+
+  .form-check { margin-bottom: 0.3rem; }
+  .form-check-label { font-size: 0.85rem; }
+}
+
+.btn-xs {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  border-radius: 4px;
+}

@@ -2,12 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PacienteService, Paciente } from '../../core/services/paciente.service';
 import { PacienteSelectorComponent } from '../../shared/components/paciente-selector/paciente-selector';
+import { HistoriaClinicaComponent } from '../historia-clinica/historia-clinica';
 
-type PanelMode = null | 'create' | 'edit';
+type PanelMode = null | 'create' | 'edit' | 'view-hc';
 
 @Component({
   selector: 'app-pacientes',
-  imports: [ReactiveFormsModule, PacienteSelectorComponent],
+  imports: [ReactiveFormsModule, PacienteSelectorComponent, HistoriaClinicaComponent],
   templateUrl: './pacientes.html',
   styleUrl: './pacientes.scss',
 })
@@ -75,6 +76,12 @@ export class PacientesComponent {
     this.panelMode.set(null);
     this.form.reset();
     this.formError.set('');
+  }
+
+  verHC() {
+    const p = this.pacienteActivo();
+    if (!p || !p.nhc) return;
+    this.panelMode.set('view-hc');
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────

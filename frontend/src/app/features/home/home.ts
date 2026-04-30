@@ -15,8 +15,12 @@ export class HomeComponent {
     const u = this.auth.getUser();
     if (!u) return '';
     const apellido = (u.apellido1 ?? '').toUpperCase();
-    const rol = (u.rol?.tipo ?? '').toLowerCase();
-    const prefijo = rol === 'admin' ? 'Admin' : 'DR/a.';
+    const rol = (u.rol?.tipo ?? '').toUpperCase();
+    const prefijo = rol === 'ADMIN' ? 'Admin' : 'DR/a.';
     return `¡Hola ${prefijo} ${apellido}!`;
+  }
+
+  hasPermission(perm: any): boolean {
+    return this.auth.hasPermission(perm);
   }
 }

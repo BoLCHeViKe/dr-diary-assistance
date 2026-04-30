@@ -1,0 +1,147 @@
+<div class="hc-wrapper">
+
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="text-center py-4">
+      <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+    </div>
+  }
+
+  <!-- ── Error ───────────────────────────────────────────────────────────── -->
+  @if (error() && !loading()) {
+    <div class="alert alert-danger py-2 small mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error() }}
+    </div>
+  }
+
+  <!-- ══ VER EPISODIOS ══════════════════════════════════════════════════════ -->
+  @if (!loading() && modo() === 'ver') {
+
+    @if (modoInicial === 'añadir') {
+      <div class="mb-3">
+        <button type="button" class="btn btn-sm btn-success w-100" (click)="abrirAnadir()">
+          <i class="bi bi-plus-circle me-1"></i>Añadir consulta / episodio
+        </button>
+      </div>
+    }
+
+    @if (detalles().length === 0) {
+      <div class="hc-empty">
+        <i class="bi bi-folder2"></i>
+        <span>No hay episodios en la Historia Clínica</span>
+      </div>
+    } @else {
+      <table class="table table-sm hc-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Esp.</th>
+            <th>Motivo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of detalles(); track d.num_orden) {
+            <tr>
+              <td class="hc-fecha">{{ formatFecha(d.f_consulta) }}</td>
+              <td class="hc-esp font-monospace">{{ d.cita?.codigo_esp ?? '—' }}</td>
+              <td class="hc-motivo">{{ d.mov_consulta || '—' }}</td>
+              <td class="hc-actions">
+                @if (canEdit(d)) {
+                  <button class="btn btn-xs btn-outline-primary" title="Editar episodio" (click)="abrirEditar(d)">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+
+  <!-- ══ AÑADIR EPISODIO ════════════════════════════════════════════════════ -->
+  @if (!loading() && modo() === 'añadir') {
+    <form [formGroup]="form" (ngSubmit)="guardarDetalle()" class="hc-form">
+      <p class="text-muted small mb-3">Nueva consulta / episodio clínico</p>
+
+      <div class="mb-3">
+        <label class="form-label">Motivo consulta <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-sm" formControlName="mov_consulta"
+               maxlength="32" placeholder="Ej. Revisión periódica"
+               [class.is-invalid]="form.get('mov_consulta')!.invalid && form.get('mov_consulta')!.touched">
+        <div class="invalid-feedback">Obligatorio (máx. 32 caracteres)</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Tratamiento <span class="text-muted small">(máx. 60 car.)</span></label>
+        <input type="text" class="form-control form-control-sm" formControlName="tto"
+               maxlength="60">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Síntomas</label>
+        <textarea class="form-control form-control-sm" formControlName="sinto" rows="3"></textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Diagnóstico <span class="text-muted small">(máx. 80 car.)</span></label>
+        <input type="text" class="form-control form-control-sm" formControlName="diag"
+               maxlength="80"
+               [class.is-invalid]="form.get('diag')!.invalid && form.get('diag')!.touched">
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-success" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          <i class="bi bi-check-circle me-1"></i>Guardar
+        </button>
+        <button type="button" class="btn btn-outline-danger" (click)="cancelar()">Cancelar</button>
+      </div>
+    </form>
+  }
+
+  <!-- ══ EDITAR EPISODIO ════════════════════════════════════════════════════ -->
+  @if (!loading() && modo() === 'editar' && detalleEditando()) {
+    <form [formGroup]="form" (ngSubmit)="actualizarDetalle()" class="hc-form">
+      <p class="text-muted small mb-1">Editando episodio nº {{ detalleEditando()!.num_orden }}</p>
+      <p class="text-muted small mb-3">
+        <i class="bi bi-calendar3 me-1"></i>Fecha: <strong>{{ formatFecha(detalleEditando()!.f_consulta) }}</strong>
+        <span class="ms-2">(no editable)</span>
+      </p>
+
+      <div class="mb-3">
+        <label class="form-label">Motivo consulta <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-sm" formControlName="mov_consulta"
+               maxlength="32"
+               [class.is-invalid]="form.get('mov_consulta')!.invalid && form.get('mov_consulta')!.touched">
+        <div class="invalid-feedback">Obligatorio (máx. 32 caracteres)</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Tratamiento <span class="text-muted small">(máx. 60 car.)</span></label>
+        <input type="text" class="form-control form-control-sm" formControlName="tto"
+               maxlength="60">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Síntomas</label>
+        <textarea class="form-control form-control-sm" formControlName="sinto" rows="3"></textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Diagnóstico <span class="text-muted small">(máx. 80 car.)</span></label>
+        <input type="text" class="form-control form-control-sm" formControlName="diag" maxlength="80">
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-success" [disabled]="saving()">
+          @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          <i class="bi bi-check-circle me-1"></i>Guardar cambios
+        </button>
+        <button type="button" class="btn btn-outline-danger" (click)="cancelar()">Cancelar</button>
+      </div>
+    </form>
+  }
+
+</div>

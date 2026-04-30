@@ -73,7 +73,7 @@
 
     </div>
 
-    <!-- Row 2: estados + Restablecer (izquierda) + Buscar (derecha) -->
+    <!-- Row 2: filtros + Restablecer + Buscar -->
     <div class="d-flex align-items-center flex-wrap gap-2">
 
       <!-- Restablecer — far left -->
@@ -83,18 +83,63 @@
 
       <span class="fact-filter-sep"></span>
 
-      <!-- Estado checkboxes -->
-      <span class="fact-filter-label">Estado:</span>
-      @for (est of ESTADOS; track est) {
-        <div class="form-check form-check-inline mb-0">
-          <input class="form-check-input" type="checkbox" [id]="'est-' + est"
-                 [checked]="estados().has(est)"
-                 (change)="toggleEstado(est)">
-          <label class="form-check-label fact-check-label" [for]="'est-' + est">
-            <span class="badge fact-badge {{ estadoClass(est) }}">{{ ESTADO_LABELS[est] }}</span>
-          </label>
+      <!-- Especialidad dropdown -->
+      @if (especialidades().length > 0) {
+        <span class="fact-filter-label">Especialidad:</span>
+        <div class="ms-dropdown" (click)="$event.stopPropagation()">
+          <button type="button" class="btn btn-sm btn-outline-secondary ms-dropdown__toggle"
+                  (click)="espDropdownOpen.update(v => !v)">
+            {{ espLabel() }}&nbsp;<i class="bi bi-chevron-down"></i>
+          </button>
+          @if (espDropdownOpen()) {
+            <div class="ms-dropdown__panel">
+              <label class="ms-dropdown__item">
+                <input type="checkbox" [checked]="todasEsp()" (change)="toggleEspTodas()">
+                <span>Todas</span>
+              </label>
+              @for (esp of especialidades(); track esp.codigo_esp) {
+                @if (esp.activo) {
+                  <label class="ms-dropdown__item">
+                    <input type="checkbox" [checked]="espFilter().includes(esp.codigo_esp)"
+                           (change)="toggleEspItem(esp.codigo_esp)">
+                    <span>{{ esp.nombre }}</span>
+                  </label>
+                }
+              }
+              @if (hasDisabledEsps()) {
+                <label class="ms-dropdown__item ms-dropdown__item--muted">
+                  <input type="checkbox" [checked]="espFilter().includes('__disabled__')"
+                         (change)="toggleEspItem('__disabled__')">
+                  <span>Esp. deshabilitadas</span>
+                </label>
+              }
+            </div>
+          }
         </div>
       }
+
+      <!-- Estado dropdown -->
+      <span class="fact-filter-label">Estado:</span>
+      <div class="ms-dropdown" (click)="$event.stopPropagation()">
+        <button type="button" class="btn btn-sm btn-outline-secondary ms-dropdown__toggle"
+                (click)="estadoDropdownOpen.update(v => !v)">
+          {{ estadoLabel() }}&nbsp;<i class="bi bi-chevron-down"></i>
+        </button>
+        @if (estadoDropdownOpen()) {
+          <div class="ms-dropdown__panel">
+            <label class="ms-dropdown__item">
+              <input type="checkbox" [checked]="todasEstados()" (change)="toggleEstadoTodas()">
+              <span>Todas</span>
+            </label>
+            @for (est of ESTADOS; track est) {
+              <label class="ms-dropdown__item">
+                <input type="checkbox" [checked]="estados().has(est)" (change)="toggleEstado(est)">
+                <span class="badge fact-badge {{ estadoClass(est) }}">{{ ESTADO_LABELS[est] }}</span>
+              </label>
+            }
+          </div>
+        }
+      </div>
 
       <!-- Buscar — far right -->
       <button type="button" class="btn btn-sm btn-primary ms-auto" (click)="search()">
@@ -127,25 +172,21 @@
         <table class="table fact-table mb-0">
           <thead>
             <tr>
-              <th class="sortable" (click)="sort('num_fact')">
-                Nº Factura <i class="bi {{ sortIcon('num_fact') }}"></i>
-              </th>
-              <th class="sortable" (click)="sort('fecha')">
-                Fecha <i class="bi {{ sortIcon('fecha') }}"></i>
-              </th>
-              <th class="sortable" (click)="sort('paciente')">
-                Paciente <i class="bi {{ sortIcon('paciente') }}"></i>
-              </th>
-              <th class="text-end sortable" (click)="sort('importe')">
-                Importe <i class="bi {{ sortIcon('importe') }}"></i>
-              </th>
-              <th class="text-end sortable" (click)="sort('abonado')">
-                Abonado <i class="bi {{ sortIcon('abonado') }}"></i>
-              </th>
-              <th class="sortable" (click)="sort('estado')">
-                Estado <i class="bi {{ sortIcon('estado') }}"></i>
-              </th>
-              <th>Fact. Rectif.</th>
+              @for (col of columnOrder(); track col; let idx = $index) {
+                <th [class.sortable]="isSortableCol(col)"
+                    [class.text-end]="colIsNumeric(col)"
+                    draggable="true"
+                    (click)="isSortableCol(col) ? sort($any(col)) : null"
+                    (dragstart)="onColDragStart(idx)"
+                    (dragover)="onColDragOver($event)"
+                    (drop)="onColDrop(idx)"
+                    (dragend)="onColDragEnd()">
+                  {{ COL_LABELS[col] }}
+                  @if (isSortableCol(col)) {
+                    <i class="bi {{ sortIcon($any(col)) }}"></i>
+                  }
+                </th>
+              }
             </tr>
           </thead>
           <tbody>
@@ -159,36 +200,57 @@
                   [title]="f.estado === 'abono' ? '' : 'Doble clic para ver acciones'"
                   (click)="onRowClick(f.num_fact)"
                   (dblclick)="onRowDblClick(f)">
-                <td class="font-monospace fw-semibold text-primary">#{{ f.num_fact }}</td>
-                <td>{{ f.fecha | date:'dd/MM/yyyy' }}</td>
-                <td>
-                  @if (f.paciente) {
-                    <span class="fw-semibold">{{ f.paciente.apellido1 }} {{ f.paciente.apellido2 ?? '' }}</span>,
-                    {{ f.paciente.nombre }}
-                  } @else { — }
-                </td>
-                <td class="text-end font-monospace" [class.text-danger]="f.estado === 'abono'">
-                  @if (f.estado === 'abono') { - }{{ importe(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
-                </td>
-                <td class="text-end font-monospace text-danger">
-                  @if (abonado(f) > 0) {
-                    -{{ abonado(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
-                  } @else { — }
-                </td>
-                <td>
-                  <span class="badge fact-badge {{ estadoClass(f.estado) }}">
-                    {{ ESTADO_LABELS[f.estado] }}
-                  </span>
-                </td>
-                <td class="font-monospace text-muted">
-                  @if (f.fact_ref) { #{{ f.fact_ref }} } @else { — }
-                </td>
+                @for (col of columnOrder(); track col) {
+                  @switch (col) {
+                    @case ('num_fact') {
+                      <td class="font-monospace fw-semibold text-primary">#{{ f.num_fact }}</td>
+                    }
+                    @case ('fecha') {
+                      <td>{{ f.fecha | date:'dd/MM/yyyy' }}</td>
+                    }
+                    @case ('paciente') {
+                      <td>
+                        @if (f.paciente) {
+                          <span class="fw-semibold">{{ f.paciente.apellido1 }} {{ f.paciente.apellido2 ?? '' }}</span>,
+                          {{ f.paciente.nombre }}
+                        } @else { — }
+                      </td>
+                    }
+                    @case ('especialidad') {
+                      <td>{{ especialidadDeFactura(f) }}</td>
+                    }
+                    @case ('importe') {
+                      <td class="text-end font-monospace" [class.text-danger]="f.estado === 'abono'">
+                        @if (f.estado === 'abono') { - }{{ importe(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
+                      </td>
+                    }
+                    @case ('abonado') {
+                      <td class="text-end font-monospace text-danger">
+                        @if (abonado(f) > 0) {
+                          -{{ abonado(f) | currency:'EUR':'symbol':'1.2-2':'es' }}
+                        } @else { — }
+                      </td>
+                    }
+                    @case ('estado') {
+                      <td>
+                        <span class="badge fact-badge {{ estadoClass(f.estado) }}">
+                          {{ ESTADO_LABELS[f.estado] }}
+                        </span>
+                      </td>
+                    }
+                    @case ('fact_ref') {
+                      <td class="font-monospace text-muted">
+                        @if (f.fact_ref) { #{{ f.fact_ref }} } @else { — }
+                      </td>
+                    }
+                  }
+                }
               </tr>
 
               <!-- ── Expanded action panel ──────────────────────────────── -->
               @if (expandedRow() === f.num_fact) {
                 <tr class="fact-actions-row">
-                  <td colspan="7" class="fact-actions-panel">
+                  <td [attr.colspan]="columnOrder().length" class="fact-actions-panel">
 
                     @switch (f.estado) {
 

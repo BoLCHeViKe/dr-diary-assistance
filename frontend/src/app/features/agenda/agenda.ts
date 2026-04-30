@@ -1,25 +1,27 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
-import { AgendaService, Agenda, Cita, Especialidad, Prestacion } from '../../core/services/agenda.service';
-import { Paciente } from '../../core/services/paciente.service';
+import { AgendaService, Agenda, Cita, Especialidad, Prestacion, Medico } from '../../core/services/agenda.service';
+import { Paciente, PacienteService } from '../../core/services/paciente.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PacienteSelectorComponent } from '../../shared/components/paciente-selector/paciente-selector';
 import { AgendaCalendarioComponent } from './agenda-calendario/agenda-calendario';
+import { HistoriaClinicaComponent } from '../historia-clinica/historia-clinica';
 
-type PanelMode = null | 'create-agenda' | 'create-cita' | 'view-cita';
+type PanelMode = null | 'create-agenda' | 'create-cita' | 'view-cita' | 'edit-cita' | 'create-paciente' | 'view-hc' | 'add-consulta';
 type EstadoCita = 'citado' | 'en espera' | 'atendido' | 'facturado';
 
 @Component({
   selector: 'app-agenda',
-  imports: [ReactiveFormsModule, CurrencyPipe, PacienteSelectorComponent, AgendaCalendarioComponent],
+  imports: [ReactiveFormsModule, CurrencyPipe, PacienteSelectorComponent, AgendaCalendarioComponent, HistoriaClinicaComponent],
   templateUrl: './agenda.html',
   styleUrl: './agenda.scss',
 })
 export class AgendaComponent implements OnInit {
-  private readonly svc  = inject(AgendaService);
-  private readonly auth = inject(AuthService);
-  private readonly fb   = inject(FormBuilder);
+  private readonly svc         = inject(AgendaService);
+  private readonly pacienteSvc = inject(PacienteService);
+  private readonly auth        = inject(AuthService);
+  private readonly fb          = inject(FormBuilder);
 
   // ── State ─────────────────────────────────────────────────────────────────
   selectedDate = signal(new Date());
@@ -45,10 +47,17 @@ export class AgendaComponent implements OnInit {
   todasAgendas   = signal<Agenda[]>([]);
   diasConAgenda  = computed(() => new Set(this.todasAgendas().map(a => a.fecha)));
 
+  // ── Multi-médico ──────────────────────────────────────────────────────────
+  medicos          = signal<Medico[]>([]);
+  selectedMedicoId = signal<number>(0); // 0 = se inicializa en ngOnInit
+
   // ── Saving flags ──────────────────────────────────────────────────────────
-  savingAgenda   = signal(false);
-  savingCita     = signal(false);
-  updatingEstado = signal(false);
+  savingAgenda        = signal(false);
+  savingCita          = signal(false);
+  updatingEstado      = signal(false);
+  savingEditCita      = signal(false);
+  savingCreatePaciente = signal(false);
+  deletingCita        = signal(false);
 
   // ── Billing sub-panel ─────────────────────────────────────────────────────
   billingOpen    = signal(false);
@@ -56,6 +65,10 @@ export class AgendaComponent implements OnInit {
   billingPrecio  = signal(0);
   billingError   = signal('');
   savingBilling  = signal(false);
+
+  // ── Edit cita state ───────────────────────────────────────────────────────
+  editCitaPatient = signal<Paciente | null>(null);
+  editCitaEsp     = signal('');
 
   // ── Forms ─────────────────────────────────────────────────────────────────
   agendaForm = this.fb.nonNullable.group({
@@ -68,6 +81,24 @@ export class AgendaComponent implements OnInit {
     codigo_esp: ['', Validators.required],
     id_prest:   [0,  [Validators.required, Validators.min(1)]],
   });
+
+  editCitaForm = this.fb.nonNullable.group({
+    codigo_esp: ['', Validators.required],
+    id_prest:   [0,  [Validators.required, Validators.min(1)]],
+  });
+
+  createPacienteForm = this.fb.nonNullable.group({
+    nombre:    ['', [Validators.required, Validators.maxLength(30)]],
+    apellido1: ['', [Validators.required, Validators.maxLength(30)]],
+    apellido2: ['', Validators.maxLength(30)],
+    fecha_nac: [''],
+    dni:       ['', [Validators.pattern(/^\d{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i), Validators.maxLength(9)]],
+    telf:      ['', Validators.maxLength(13)],
+  });
+
+  filteredEditPrestaciones = computed(() =>
+    this.prestaciones().filter(p => p.codigo_esp === this.editCitaEsp())
+  );
 
   // ── Computed ──────────────────────────────────────────────────────────────
   dateStr = computed(() => {
@@ -119,7 +150,21 @@ export class AgendaComponent implements OnInit {
   );
 
   get medicoId(): number {
-    return this.auth.getUser()?.id ?? 0;
+    return this.selectedMedicoId() || this.auth.getUser()?.id || 0;
+  }
+
+  get canSwitchMedico(): boolean {
+    return this.auth.hasPermission('perm_multi_agenda');
+  }
+
+  medicoLabel(m: Medico): string {
+    const u = m.usuario;
+    return `${u.apellido1}${u.apellido2 ? ' ' + u.apellido2 : ''}, ${u.nombre}`;
+  }
+
+  onMedicoChange(event: Event) {
+    this.selectedMedicoId.set(Number((event.target as HTMLSelectElement).value));
+    this.loadAgenda();
   }
 
   readonly INTERVALOS: number[] = [5, 10, 15, 20, 30, 45, 60];
@@ -127,6 +172,20 @@ export class AgendaComponent implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {
+    const userId = this.auth.getUser()?.id ?? 0;
+    this.selectedMedicoId.set(userId);
+
+    if (this.canSwitchMedico) {
+      this.svc.getMedicos().subscribe(list => {
+        const sorted = [...list].sort((a, b) => {
+          const la = `${a.usuario.apellido1} ${a.usuario.apellido2 ?? ''}`.trim();
+          const lb = `${b.usuario.apellido1} ${b.usuario.apellido2 ?? ''}`.trim();
+          return la.localeCompare(lb, 'es');
+        });
+        this.medicos.set(sorted);
+      });
+    }
+
     this.loadAgenda();
     this.loadCatalogues();
   }
@@ -211,8 +270,12 @@ export class AgendaComponent implements OnInit {
     this.panelError.set('');
     this.billingOpen.set(false);
     this.billingError.set('');
+    this.editCitaPatient.set(null);
+    this.editCitaEsp.set('');
     this.agendaForm.reset({ h_inicio: '09:00', h_fin: '14:00', min_intervalo: 15 });
     this.citaForm.reset({ codigo_esp: '', id_prest: 0 });
+    this.editCitaForm.reset({ codigo_esp: '', id_prest: 0 });
+    this.createPacienteForm.reset();
   }
 
   openNewCita(slot: string) {
@@ -375,6 +438,119 @@ export class AgendaComponent implements OnInit {
     }
   }
 
+  // ── Delete / Edit cita desde slot ─────────────────────────────────────────
+  deleteCita(event: Event, cita: Cita) {
+    event.stopPropagation();
+    const ag = this.agenda();
+    if (!ag) return;
+    if (!confirm(`¿Eliminar la cita de ${cita.paciente?.apellido1 ?? 'este paciente'}?`)) return;
+    this.deletingCita.set(true);
+    this.svc.deleteCita(ag.id_agenda, cita.id_cita).subscribe({
+      next: () => {
+        this.deletingCita.set(false);
+        if (this.selectedCita()?.id_cita === cita.id_cita) this.closePanel();
+        this.loadCitas();
+      },
+      error: (e) => {
+        this.deletingCita.set(false);
+        alert(e.error?.error ?? 'No se puede eliminar la cita.');
+      },
+    });
+  }
+
+  editarCita(event: Event, cita: Cita) {
+    event.stopPropagation();
+    if (cita.num_fact) { alert('¡El/la paciente ya ha sido facturado/a!'); return; }
+    this.selectedCita.set(cita);
+    this.editCitaPatient.set(cita.paciente ?? null);
+    this.editCitaEsp.set(cita.codigo_esp);
+    this.editCitaForm.patchValue({ codigo_esp: cita.codigo_esp, id_prest: cita.id_prest });
+    this.panelError.set('');
+    this.panelMode.set('edit-cita');
+  }
+
+  onEditCitaEspChange(event: Event) {
+    this.editCitaEsp.set((event.target as HTMLSelectElement).value);
+    this.editCitaForm.patchValue({ id_prest: 0 });
+  }
+
+  submitEditCita() {
+    if (!this.editCitaPatient()) { this.panelError.set('Selecciona un paciente.'); return; }
+    if (this.editCitaForm.invalid) { this.editCitaForm.markAllAsTouched(); return; }
+    const cita = this.selectedCita();
+    const ag   = this.agenda();
+    if (!cita || !ag) return;
+    this.savingEditCita.set(true);
+    const { codigo_esp, id_prest } = this.editCitaForm.getRawValue();
+    this.svc.updateCita(ag.id_agenda, cita.id_cita, {
+      id_paciente: this.editCitaPatient()!.id_paciente,
+      codigo_esp,
+      id_prest,
+    }).subscribe({
+      next: () => { this.savingEditCita.set(false); this.closePanel(); this.loadCitas(); },
+      error: (e) => {
+        this.panelError.set(e.error?.error ?? 'Error al actualizar la cita.');
+        this.savingEditCita.set(false);
+      },
+    });
+  }
+
+  // ── Crear paciente desde agenda ───────────────────────────────────────────
+  onCrearPaciente() {
+    this.createPacienteForm.reset();
+    this.panelError.set('');
+    this.panelMode.set('create-paciente');
+  }
+
+  submitCreatePaciente() {
+    if (this.createPacienteForm.invalid) { this.createPacienteForm.markAllAsTouched(); return; }
+    this.savingCreatePaciente.set(true);
+    const v = this.createPacienteForm.getRawValue();
+    const data: any = {
+      nombre:    v.nombre,
+      apellido1: v.apellido1,
+      apellido2: v.apellido2 || undefined,
+      fecha_nac: v.fecha_nac || undefined,
+      telf:      v.telf || undefined,
+      dni:       v.dni || undefined,
+    };
+    this.pacienteSvc.create(data).subscribe({
+      next: (p) => {
+        this.savingCreatePaciente.set(false);
+        this.selectedPatient.set(p);
+        this.panelMode.set('create-cita');
+      },
+      error: (e) => {
+        this.panelError.set(e.error?.error ?? e.error?.message ?? 'Error al crear el paciente.');
+        this.savingCreatePaciente.set(false);
+      },
+    });
+  }
+
+  // ── Historia Clínica ─────────────────────────────────────────────────────
+  verHC(cita: Cita) {
+    this.selectedCita.set(cita);
+    this.panelMode.set('view-hc');
+  }
+
+  anadirConsulta(cita: Cita) {
+    this.selectedCita.set(cita);
+    this.panelMode.set('add-consulta');
+  }
+
+  onConsultaGuardada() {
+    const cita = this.selectedCita();
+    const ag   = this.agenda();
+    if (!cita || !ag) return;
+    this.svc.updateCitaEstado(ag.id_agenda, cita.id_cita, 'atendido').subscribe({
+      next: (updated) => {
+        this.selectedCita.set(updated);
+        this.loadCitas();
+        this.panelMode.set('view-hc');
+      },
+    });
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
   estadoClass(estado: string): string {
     return 'estado-' + estado.replace(' ', '-');
@@ -382,6 +558,16 @@ export class AgendaComponent implements OnInit {
 
   fmt(t: string): string {
     return t.substring(0, 5);
+  }
+
+  calcularEdad(fechaNac?: string): string {
+    if (!fechaNac) return '';
+    const hoy   = new Date();
+    const nac   = new Date(fechaNac);
+    let edad    = hoy.getFullYear() - nac.getFullYear();
+    const m     = hoy.getMonth() - nac.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+    return `${edad} años`;
   }
 
   private loadCitas() {

@@ -7,7 +7,32 @@ class Rol extends Model
     protected $table = 'rol';
     public $timestamps = false;
 
-    protected $fillable = ['tipo'];
+    protected $fillable = [
+        'tipo',
+        'perm_agenda', 'perm_hc', 'perm_multi_agenda',
+        'perm_facturacion', 'perm_estadisticas',
+        'perm_gest_roles', 'perm_gest_usuarios',
+        'perm_gest_prestaciones', 'perm_gest_especialidades',
+    ];
+
+    protected $casts = [
+        'perm_agenda'              => 'boolean',
+        'perm_hc'                  => 'boolean',
+        'perm_multi_agenda'        => 'boolean',
+        'perm_facturacion'         => 'boolean',
+        'perm_estadisticas'        => 'boolean',
+        'perm_gest_roles'          => 'boolean',
+        'perm_gest_usuarios'       => 'boolean',
+        'perm_gest_prestaciones'   => 'boolean',
+        'perm_gest_especialidades' => 'boolean',
+    ];
+
+    // Permisos mínimos inamovibles del rol MÉDICO (id=2)
+    public const MEDICO_MIN_PERMS = [
+        'perm_agenda'      => true,
+        'perm_hc'          => true,
+        'perm_facturacion' => true,
+    ];
 
     public function usuarios()
     {

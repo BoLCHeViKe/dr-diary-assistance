@@ -1,0 +1,100 @@
+<div class="gestion-page">
+
+  <div class="gestion-page__header mb-3">
+    <h5 class="page-title mb-0"><i class="bi bi-bookmarks-fill me-2"></i>Gestionar Especialidades</h5>
+    <button class="btn btn-primary btn-lg btn-crear" (click)="openCreate()">
+      <i class="bi bi-plus-lg me-2"></i>Nueva Especialidad
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="flex-grow-1">{{ error() }}</span>
+      <button class="btn-close" (click)="error.set('')"></button>
+    </div>
+  }
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th class="text-center">Prestaciones</th>
+          <th class="text-center">Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (esp of especialidades(); track esp.codigo_esp) {
+          <tr [class.table-secondary]="!esp.activo">
+            <td class="font-monospace fw-bold small">{{ esp.codigo_esp }}</td>
+            <td [class.text-muted]="!esp.activo">{{ esp.nombre }}</td>
+            <td class="text-center">
+              <span class="badge bg-secondary">{{ esp.prestaciones?.length ?? 0 }}</span>
+            </td>
+            <td class="text-center">
+              @if (esp.activo) {
+                <span class="badge bg-success">Activa</span>
+              } @else {
+                <span class="badge bg-secondary">Inactiva</span>
+              }
+            </td>
+            <td class="text-end">
+              <button class="btn btn-xs btn-outline-primary me-1" (click)="openEdit(esp)">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-xs"
+                      [class.btn-outline-danger]="esp.activo"
+                      [class.btn-outline-success]="!esp.activo"
+                      (click)="toggle(esp)"
+                      [title]="esp.activo ? 'Deshabilitar' : 'Habilitar'">
+                <i class="bi" [class.bi-toggle-on]="esp.activo" [class.bi-toggle-off]="!esp.activo"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (panelMode()) {
+    <div class="panel-backdrop" (click)="closePanel()"></div>
+    <div class="side-panel">
+      <div class="panel-header">
+        @if (panelMode() === 'create') { <span>Nueva especialidad</span> }
+        @if (panelMode() === 'edit')   { <span>Editar: <strong>{{ editingEsp()?.nombre }}</strong></span> }
+        <button class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="panel-body">
+        @if (formError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ formError() }}
+          </div>
+        }
+        <div class="mb-3">
+          <label class="form-label">Código (4 letras) <span class="text-danger">*</span></label>
+          <input type="text" class="form-control font-monospace text-uppercase"
+                 formControlName="codigo_esp" maxlength="4" placeholder="DERM"
+                 [class.is-invalid]="form.get('codigo_esp')!.invalid && form.get('codigo_esp')!.touched">
+          <div class="invalid-feedback">Obligatorio, máx. 4 letras</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nombre <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="nombre" maxlength="30"
+                 [class.is-invalid]="form.get('nombre')!.invalid && form.get('nombre')!.touched">
+          <div class="invalid-feedback">Obligatorio</div>
+        </div>
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            @if (panelMode() === 'create') { Crear especialidad }
+            @if (panelMode() === 'edit')   { Guardar cambios }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+</div>

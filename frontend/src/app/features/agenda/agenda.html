@@ -21,6 +21,15 @@
         <input type="date" class="form-control form-control-sm agenda-date-input"
                [value]="dateStr()" (change)="onDateChange($event)">
 
+        @if (canSwitchMedico) {
+          <select class="form-select form-select-sm agenda-medico-select"
+                  [value]="selectedMedicoId()" (change)="onMedicoChange($event)">
+            @for (m of medicos(); track m.id) {
+              <option [value]="m.id">{{ medicoLabel(m) }}</option>
+            }
+          </select>
+        }
+
         <!-- Mobile dropdown calendar -->
         @if (calendarOpen()) {
           <div class="cal-dropdown" (click)="$event.stopPropagation()">
@@ -99,14 +108,26 @@
               <span class="slot-time">{{ slot }}</span>
               <div class="slot-body">
                 <span class="slot-patient">
-                  {{ cita.paciente?.nombre }} {{ cita.paciente?.apellido1 }}
+                  {{ cita.paciente?.apellido1 }}{{ cita.paciente?.apellido2 ? ' ' + cita.paciente?.apellido2 : '' }}, {{ cita.paciente?.nombre }}
                 </span>
                 @if (cita.prestacion) {
                   <span class="slot-prest">{{ cita.prestacion.nombre }}</span>
                 }
+                @if (cita.paciente?.telf) {
+                  <span class="slot-telf"><i class="bi bi-telephone-fill"></i> {{ cita.paciente!.telf }}</span>
+                }
               </div>
-              <span class="badge rounded-pill slot-badge {{ estadoClass(cita.estado) }}">{{ cita.estado }}</span>
-              <i class="bi bi-chevron-right slot-arrow"></i>
+              <div class="slot-right">
+                <span class="badge rounded-pill slot-badge {{ estadoClass(cita.estado) }}">{{ cita.estado }}</span>
+                <div class="slot-actions">
+                  <button class="btn-slot-action" title="Editar cita" (click)="editarCita($event, cita)">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                  <button class="btn-slot-action btn-slot-action--danger" title="Eliminar cita" (click)="deleteCita($event, cita)">
+                    <i class="bi bi-trash-fill"></i>
+                  </button>
+                </div>
+              </div>
             </div>
 
           } @else {
@@ -144,9 +165,13 @@
 
     <!-- Panel header -->
     <div class="panel-header">
-      @if (panelMode() === 'create-agenda') { <span>Nueva agenda</span> }
-      @if (panelMode() === 'create-cita')   { <span>Nueva cita · <strong>{{ selectedSlot() }} h {{ dateDMY() }}</strong></span> }
-      @if (panelMode() === 'view-cita')     { <span>Cita · <strong>{{ fmt(selectedCita()!.h_cita) }} h {{ dateDMY() }}</strong></span> }
+      @if (panelMode() === 'create-agenda')   { <span>Nueva agenda</span> }
+      @if (panelMode() === 'create-cita')     { <span>Nueva cita · <strong>{{ selectedSlot() }} h {{ dateDMY() }}</strong></span> }
+      @if (panelMode() === 'view-cita')       { <span>Cita · <strong>{{ fmt(selectedCita()!.h_cita) }} h {{ dateDMY() }}</strong></span> }
+      @if (panelMode() === 'edit-cita')       { <span>Editar cita · <strong>{{ fmt(selectedCita()!.h_cita) }} h {{ dateDMY() }}</strong></span> }
+      @if (panelMode() === 'create-paciente') { <span>Nuevo paciente</span> }
+      @if (panelMode() === 'view-hc')         { <span>Historia Clínica</span> }
+      @if (panelMode() === 'add-consulta')    { <span>Añadir consulta</span> }
       <button type="button" class="btn-close btn-close-white ms-auto" (click)="closePanel()"></button>
     </div>
 
@@ -207,7 +232,8 @@
           @if (!selectedPatient()) {
             <app-paciente-selector
               mode="inline"
-              (seleccionado)="onPacienteSeleccionado($event)" />
+              (seleccionado)="onPacienteSeleccionado($event)"
+              (crearPaciente)="onCrearPaciente()" />
           } @else {
             <div class="patient-card">
               <i class="bi bi-person-check-fill patient-card__icon"></i>
@@ -280,7 +306,18 @@
           <div class="cita-row">
             <i class="bi bi-person-fill cita-icon"></i>
             <div>
-              <div class="fw-semibold">{{ cita.paciente?.nombre }} {{ cita.paciente?.apellido1 }}</div>
+              <div class="fw-semibold">
+                {{ cita.paciente?.apellido1 }}{{ cita.paciente?.apellido2 ? ' ' + cita.paciente!.apellido2 : '' }}, {{ cita.paciente?.nombre }}
+              </div>
+              @if (cita.paciente?.fecha_nac) {
+                <div class="small text-muted">{{ calcularEdad(cita.paciente!.fecha_nac) }}</div>
+              }
+              @if (cita.paciente?.dni) {
+                <div class="small text-muted font-monospace">{{ cita.paciente!.dni }}</div>
+              }
+              @if (cita.paciente?.telf) {
+                <div class="small text-muted"><i class="bi bi-telephone-fill me-1"></i>{{ cita.paciente!.telf }}</div>
+              }
             </div>
           </div>
           @if (cita.prestacion) {
@@ -325,8 +362,22 @@
             }
           </div>
 
+          <!-- Acciones HC -->
+          @if (!cita.num_fact && cita.paciente?.nhc) {
+            <div class="mt-3 d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary flex-fill" (click)="verHC(cita)">
+                <i class="bi bi-folder2-open me-1"></i>Ver H.C.
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-success flex-fill"
+                      [disabled]="cita.estado === 'atendido' || cita.estado === 'facturado'"
+                      (click)="anadirConsulta(cita)">
+                <i class="bi bi-plus-circle me-1"></i>Añadir consulta
+              </button>
+            </div>
+          }
+
           @if (cita.estado === 'citado' && !cita.num_fact) {
-            <div class="mt-4 pt-3 border-top">
+            <div class="mt-3 pt-3 border-top">
               <button type="button" class="btn btn-outline-danger w-100" (click)="cancelCita()">
                 <i class="bi bi-x-circle me-2"></i>Cancelar cita
               </button>
@@ -374,6 +425,167 @@
           </div>
         }
 
+      </div>
+    }
+
+    <!-- ── EDIT CITA ───────────────────────────────────────────────────── -->
+    @if (panelMode() === 'edit-cita' && selectedCita()) {
+      <div class="panel-body">
+
+        @if (panelError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ panelError() }}
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Paciente</label>
+          @if (!editCitaPatient()) {
+            <app-paciente-selector
+              mode="inline"
+              (seleccionado)="editCitaPatient.set($event)"
+              (crearPaciente)="onCrearPaciente()" />
+          } @else {
+            <div class="patient-card">
+              <i class="bi bi-person-check-fill patient-card__icon"></i>
+              <div class="patient-card__info">
+                <div class="fw-semibold">
+                  {{ editCitaPatient()!.apellido1 }} {{ editCitaPatient()!.apellido2 ?? '' }},
+                  {{ editCitaPatient()!.nombre }}
+                </div>
+                <div class="small text-muted font-monospace">{{ editCitaPatient()!.dni }}</div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+                      (click)="editCitaPatient.set(null)" title="Cambiar paciente">
+                <i class="bi bi-arrow-repeat me-1"></i>Cambiar
+              </button>
+            </div>
+          }
+        </div>
+
+        <form [formGroup]="editCitaForm" (ngSubmit)="submitEditCita()">
+          <div class="mb-3">
+            <label class="form-label">Especialidad</label>
+            <select class="form-select" formControlName="codigo_esp"
+                    (change)="onEditCitaEspChange($event)"
+                    [class.is-invalid]="editCitaForm.get('codigo_esp')!.invalid && editCitaForm.get('codigo_esp')!.touched">
+              <option value="">— Seleccionar —</option>
+              @for (e of especialidades(); track e.codigo_esp) {
+                <option [value]="e.codigo_esp">{{ e.nombre }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">Selecciona una especialidad</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Prestación</label>
+            <select class="form-select" formControlName="id_prest"
+                    [class.is-invalid]="editCitaForm.get('id_prest')!.invalid && editCitaForm.get('id_prest')!.touched">
+              <option [value]="0">
+                @if (!editCitaEsp()) { — Elige primero una especialidad — }
+                @else                { — Seleccionar prestación — }
+              </option>
+              @for (p of filteredEditPrestaciones(); track p.id_prest) {
+                <option [value]="p.id_prest">{{ p.nombre }} — {{ p.precio | currency:'EUR':'symbol':'1.2-2':'es' }}</option>
+              }
+            </select>
+            <div class="invalid-feedback">Selecciona una prestación</div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary" [disabled]="savingEditCita()">
+              @if (savingEditCita()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              <i class="bi bi-check-circle me-2"></i>Guardar cambios
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="closePanel()">Cancelar</button>
+          </div>
+        </form>
+
+      </div>
+    }
+
+    <!-- ── CREATE PACIENTE desde agenda ─────────────────────────────────── -->
+    @if (panelMode() === 'create-paciente') {
+      <div class="panel-body">
+
+        @if (panelError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ panelError() }}
+          </div>
+        }
+
+        <p class="text-muted small mb-3">Rellena los datos del nuevo paciente. El DNI es opcional (p.ej. recién nacido).</p>
+
+        <form [formGroup]="createPacienteForm" (ngSubmit)="submitCreatePaciente()">
+          <div class="mb-3">
+            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" formControlName="nombre"
+                   [class.is-invalid]="createPacienteForm.get('nombre')!.invalid && createPacienteForm.get('nombre')!.touched">
+            <div class="invalid-feedback">Obligatorio (máx. 30 caracteres)</div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Apellido 1 <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" formControlName="apellido1"
+                     [class.is-invalid]="createPacienteForm.get('apellido1')!.invalid && createPacienteForm.get('apellido1')!.touched">
+              <div class="invalid-feedback">Obligatorio</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Apellido 2</label>
+              <input type="text" class="form-control form-control-sm" formControlName="apellido2">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha nacimiento</label>
+            <input type="date" class="form-control form-control-sm" formControlName="fecha_nac">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">DNI <span class="text-muted small">(opcional)</span></label>
+            <input type="text" class="form-control form-control-sm" formControlName="dni"
+                   placeholder="12345678A"
+                   [class.is-invalid]="createPacienteForm.get('dni')!.invalid && createPacienteForm.get('dni')!.touched">
+            <div class="invalid-feedback">Formato inválido (8 dígitos + letra)</div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" class="form-control form-control-sm" formControlName="telf">
+          </div>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success" [disabled]="savingCreatePaciente()">
+              @if (savingCreatePaciente()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              <i class="bi bi-person-plus me-2"></i>Crear paciente
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="panelMode.set('create-cita')">
+              <i class="bi bi-arrow-left me-1"></i>Volver a la cita
+            </button>
+          </div>
+        </form>
+
+      </div>
+    }
+
+    <!-- ── VIEW HC ──────────────────────────────────────────────────────── -->
+    @if (panelMode() === 'view-hc' && selectedCita()?.paciente?.nhc) {
+      <div class="panel-body">
+        <app-historia-clinica
+          [nhc]="selectedCita()!.paciente!.nhc!"
+          [idPaciente]="selectedCita()!.id_paciente"
+          modoInicial="ver"
+          (cerrar)="closePanel()"
+          (consultaGuardada)="onConsultaGuardada()" />
+      </div>
+    }
+
+    <!-- ── ADD CONSULTA ──────────────────────────────────────────────────── -->
+    @if (panelMode() === 'add-consulta' && selectedCita()?.paciente?.nhc) {
+      <div class="panel-body">
+        <app-historia-clinica
+          [nhc]="selectedCita()!.paciente!.nhc!"
+          [idPaciente]="selectedCita()!.id_paciente"
+          modoInicial="añadir"
+          [citaParaAnadir]="selectedCita()!"
+          (cerrar)="closePanel()"
+          (consultaGuardada)="onConsultaGuardada()" />
       </div>
     }
 
