@@ -192,7 +192,8 @@ export class FacturacionComponent implements OnInit {
 
   desde   = signal('');
   hasta   = signal('');
-  estados = signal<Set<EstadoFact>>(new Set(['emitida', 'anulada', 'abono']));
+//  estados = signal<Set<EstadoFact>>(new Set(['emitida', 'anulada', 'abono']));
+  estados = signal<Set<EstadoFact>>(new Set([...ESTADOS_FACTURA])); // Inicializado con todos los estados
 
   readonly PER_PAGE = 10;
 
@@ -245,7 +246,8 @@ export class FacturacionComponent implements OnInit {
 
   resetFilters() {
     this.setDefaultDates();
-    this.estados.set(new Set(['emitida', 'anulada', 'abono']));
+    // this.estados.set(new Set(['emitida', 'anulada', 'abono']));
+    this.estados.set(new Set([...ESTADOS_FACTURA])); // También en el reset
     this.selectedPatient.set(null);
     this.patientQuery.set('');
     this.espFilter.set(['TODAS']);
