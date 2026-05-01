@@ -71,8 +71,14 @@ class UsuarioController extends Controller
 
                 if ($user->id_rol == 1) {
                     Admin::create(['id' => $user->id, 'num_auto' => $request->num_auto]);
-                } elseif ($user->id_rol == 2) {
-                    Medico::create(['id' => $user->id, 'num_col' => $request->num_col]);
+                } else {
+                    $rol = \App\Models\Rol::find($user->id_rol);
+                    if ($rol && $rol->perm_agenda_disponible) {
+                        Medico::create([
+                            'id'      => $user->id,
+                            'num_col' => $user->id_rol == 2 ? $request->num_col : null,
+                        ]);
+                    }
                 }
 
                 return response()->json($user->load(['rol', 'medico', 'admin']), 201);
@@ -123,8 +129,15 @@ class UsuarioController extends Controller
 
                 if ($user->id_rol == 1 && $request->has('num_auto')) {
                     Admin::where('id', $user->id)->update(['num_auto' => $request->num_auto]);
-                } elseif ($user->id_rol == 2 && $request->has('num_col')) {
-                    Medico::where('id', $user->id)->update(['num_col' => $request->num_col]);
+                } else {
+                    $rol = \App\Models\Rol::find($user->id_rol);
+                    if ($rol && $rol->perm_agenda_disponible) {
+                        if (!Medico::find($user->id)) {
+                            Medico::create(['id' => $user->id, 'num_col' => null]);
+                        } elseif ($user->id_rol == 2 && $request->has('num_col')) {
+                            Medico::where('id', $user->id)->update(['num_col' => $request->num_col]);
+                        }
+                    }
                 }
             });
 

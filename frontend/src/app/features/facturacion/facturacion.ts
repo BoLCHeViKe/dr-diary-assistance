@@ -123,19 +123,23 @@ export class FacturacionComponent implements OnInit {
   }
 
   // ── Estado filter ─────────────────────────────────────────────────────────
+  estadoFilter       = signal<string[]>(['TODAS']);
   estadoDropdownOpen = signal(false);
 
-  todasEstados = computed(() => this.estados().size === ESTADOS_FACTURA.length);
+  todasEstados = computed(() => this.estadoFilter().includes('TODAS'));
 
   estadoLabel = computed(() => {
     if (this.todasEstados()) return 'TODAS';
-    const sel = [...this.estados()];
-    if (sel.length === 0) return 'Ninguno';
-    return sel.map(e => this.ESTADO_LABELS[e]).join(', ');
+    return this.estadoFilter().map((e: string) => this.ESTADO_LABELS[e as EstadoFact]).join(', ');
   });
 
-  toggleEstadoTodas() {
-    this.estados.set(new Set([...ESTADOS_FACTURA]));
+  toggleEstadoTodas() { this.estadoFilter.set(['TODAS']); }
+
+  toggleEstadoItem(est: string) {
+    const current = this.estadoFilter().filter((v: string) => v !== 'TODAS');
+    const idx = current.indexOf(est);
+    if (idx >= 0) current.splice(idx, 1); else current.push(est);
+    this.estadoFilter.set(current.length > 0 ? current : ['TODAS']);
   }
 
   especialidadDeFactura(f: Factura): string {
@@ -192,8 +196,6 @@ export class FacturacionComponent implements OnInit {
 
   desde   = signal('');
   hasta   = signal('');
-//  estados = signal<Set<EstadoFact>>(new Set(['emitida', 'anulada', 'abono']));
-  estados = signal<Set<EstadoFact>>(new Set([...ESTADOS_FACTURA])); // Inicializado con todos los estados
 
   readonly PER_PAGE = 10;
 
@@ -226,8 +228,8 @@ export class FacturacionComponent implements OnInit {
     if (this.desde()) filters.desde_fecha = this.desde();
     if (this.hasta()) filters.hasta_fecha = this.hasta();
     if (this.selectedPatient()) filters.id_paciente = this.selectedPatient()!.id_paciente;
-    const estArr = [...this.estados()];
-    if (estArr.length > 0 && estArr.length < 4) filters.estados = estArr.join(',');
+    const estArr = this.estadoFilter();
+    if (!estArr.includes('TODAS')) filters.estados = estArr.join(',');
     const espArr = this.espFilter();
     if (!espArr.includes('TODAS')) filters.especialidades = espArr.join(',');
 
@@ -246,8 +248,7 @@ export class FacturacionComponent implements OnInit {
 
   resetFilters() {
     this.setDefaultDates();
-    // this.estados.set(new Set(['emitida', 'anulada', 'abono']));
-    this.estados.set(new Set([...ESTADOS_FACTURA])); // También en el reset
+    this.estadoFilter.set(['TODAS']);
     this.selectedPatient.set(null);
     this.patientQuery.set('');
     this.espFilter.set(['TODAS']);
@@ -276,12 +277,7 @@ export class FacturacionComponent implements OnInit {
     return range;
   });
 
-  // ── Estado filter toggle ──────────────────────────────────────────────────
-  toggleEstado(est: EstadoFact) {
-    const s = new Set(this.estados());
-    if (s.has(est)) s.delete(est); else s.add(est);
-    this.estados.set(s.size > 0 ? s : new Set([...ESTADOS_FACTURA]));
-  }
+  // ── Estado filter toggle — handled by toggleEstadoTodas / toggleEstadoItem ──
 
   @HostListener('document:click')
   onDocClick() {

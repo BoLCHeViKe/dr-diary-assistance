@@ -5,9 +5,11 @@ import { RolPermisos } from './auth.service';
 export interface Rol {
   id: number;
   tipo: string;
+  insignia?: string;
   usuarios_count?: number;
   perm_agenda: boolean;
   perm_hc: boolean;
+  perm_agenda_disponible: boolean;
   perm_multi_agenda: boolean;
   perm_facturacion: boolean;
   perm_estadisticas: boolean;

@@ -30,14 +30,17 @@
           <tr>
             <td>
               <span class="fw-bold">{{ rol.tipo }}</span>
-              @if (rol.id === 1) { <span class="badge bg-danger ms-2">ADMIN</span> }
-              @if (rol.id === 2) { <span class="badge bg-primary ms-2">MÉDICO</span> }
+              @if (rol.id === 1) {
+                <span class="badge ms-2" style="background:#0d9e8a;color:#fff;">S.ADMIN</span>
+              } @else if (rol.insignia) {
+                <span class="badge bg-primary ms-2">{{ rol.insignia }}</span>
+              }
             </td>
             <td class="text-center">
               @if (rol.id === 1) {
                 <span class="text-success small fw-bold">Todos</span>
               } @else {
-                <span class="text-muted small">{{ permCount(rol) }} / 9</span>
+                <span class="text-muted small">{{ permCount(rol) }} / 10</span>
               }
             </td>
             <td class="text-center">
@@ -87,6 +90,24 @@
           <input type="text" class="form-control" formControlName="tipo" maxlength="20"
                  [class.is-invalid]="form.get('tipo')!.invalid && form.get('tipo')!.touched">
           <div class="invalid-feedback">Obligatorio (máx. 20 caracteres)</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Insignia (badge)</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control" formControlName="insignia" maxlength="8"
+                   placeholder="Ej: ENF, TECN…"
+                   [class.is-invalid]="form.get('insignia')!.invalid && form.get('insignia')!.touched"
+                   style="max-width:160px; text-transform:uppercase;">
+            @if (form.get('insignia')!.value) {
+              <span class="badge bg-primary">{{ form.get('insignia')!.value }}</span>
+            }
+            @if (form.get('insignia')!.disabled) {
+              <span class="badge bg-secondary ms-1 small">bloqueada</span>
+            }
+          </div>
+          <div class="form-text">Máx. 8 caracteres. Se mostrará junto al nombre en el sistema.</div>
+          <div class="invalid-feedback">Máximo 8 caracteres.</div>
         </div>
 
         <hr class="my-3">

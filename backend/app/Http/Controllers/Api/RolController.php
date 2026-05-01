@@ -9,8 +9,9 @@ use Illuminate\Validation\Rule;
 class RolController extends Controller
 {
     private const PERM_FIELDS = [
-        'perm_agenda', 'perm_hc', 'perm_multi_agenda', 'perm_facturacion',
-        'perm_estadisticas', 'perm_gest_roles', 'perm_gest_usuarios',
+        'perm_agenda', 'perm_hc', 'perm_agenda_disponible', 'perm_multi_agenda',
+        'perm_facturacion', 'perm_estadisticas',
+        'perm_gest_roles', 'perm_gest_usuarios',
         'perm_gest_prestaciones', 'perm_gest_especialidades',
     ];
 
@@ -37,11 +38,14 @@ class RolController extends Controller
     public function store(Request $request)
     {
         $request->validate(array_merge(
-            ['tipo' => 'required|string|max:20|unique:rol,tipo'],
+            [
+                'tipo'    => 'required|string|max:20|unique:rol,tipo',
+                'insignia' => 'nullable|string|max:8',
+            ],
             $this->permValidation()
         ));
 
-        $rol = Rol::create($request->only(array_merge(['tipo'], self::PERM_FIELDS)));
+        $rol = Rol::create($request->only(array_merge(['tipo', 'insignia'], self::PERM_FIELDS)));
         return response()->json($rol, 201);
     }
 
@@ -57,7 +61,10 @@ class RolController extends Controller
         if (!$rol) return response()->json(['error' => 'Rol no encontrado'], 404);
 
         $request->validate(array_merge(
-            ['tipo' => ['sometimes', 'string', 'max:20', Rule::unique('rol', 'tipo')->ignore($id)]],
+            [
+                'tipo'    => ['sometimes', 'string', 'max:20', Rule::unique('rol', 'tipo')->ignore($id)],
+                'insignia' => 'sometimes|nullable|string|max:10',
+            ],
             $this->permValidation()
         ));
 
@@ -72,7 +79,11 @@ class RolController extends Controller
             }
         }
 
-        $rol->fill($request->only(array_merge(['tipo'], self::PERM_FIELDS)));
+        // Campos editables (insignia bloqueada para MÉDICO id=2)
+        $fields = array_merge(['tipo'], self::PERM_FIELDS);
+        if ($id != 2) $fields[] = 'insignia';
+
+        $rol->fill($request->only($fields));
         $rol->save();
 
         return response()->json($rol);

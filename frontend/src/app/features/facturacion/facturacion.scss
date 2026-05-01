@@ -48,10 +48,11 @@
 
   &__toggle {
     white-space: nowrap;
-    max-width: 220px;
+    width: 130px;
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: left;
+    flex-shrink: 0;
   }
 
   &__panel {

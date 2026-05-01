@@ -133,7 +133,7 @@
             </label>
             @for (est of ESTADOS; track est) {
               <label class="ms-dropdown__item">
-                <input type="checkbox" [checked]="estados().has(est)" (change)="toggleEstado(est)">
+                <input type="checkbox" [checked]="estadoFilter().includes(est)" (change)="toggleEstadoItem(est)">
                 <span class="badge fact-badge {{ estadoClass(est) }}">{{ ESTADO_LABELS[est] }}</span>
               </label>
             }

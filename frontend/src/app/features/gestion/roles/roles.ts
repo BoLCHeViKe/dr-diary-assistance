@@ -8,9 +8,10 @@ const PERM_GROUPS = [
   {
     label: 'Citas',
     perms: [
-      { key: 'perm_agenda',       label: 'Acceso Agenda' },
-      { key: 'perm_hc',           label: 'Acceso H.C.' },
-      { key: 'perm_multi_agenda', label: 'Acceso a múltiples Agendas' },
+      { key: 'perm_agenda',            label: 'Acceso Agenda' },
+      { key: 'perm_hc',               label: 'Acceso H.C.' },
+      { key: 'perm_agenda_disponible', label: 'Tiene agenda disponible' },
+      { key: 'perm_multi_agenda',      label: 'Acceso a múltiples Agendas' },
     ],
   },
   {
@@ -52,8 +53,10 @@ export class GestionRolesComponent implements OnInit {
 
   form = this.fb.nonNullable.group({
     tipo:                     ['', [Validators.required, Validators.maxLength(20)]],
+    insignia:                 ['', Validators.maxLength(8)],
     perm_agenda:              [false],
     perm_hc:                  [false],
+    perm_agenda_disponible:   [false],
     perm_multi_agenda:        [false],
     perm_facturacion:         [false],
     perm_estadisticas:        [false],
@@ -87,9 +90,11 @@ export class GestionRolesComponent implements OnInit {
     if (rol.id === 2) {
       this.form.get('perm_agenda')!.disable();
       this.form.get('perm_hc')!.disable();
+      this.form.get('perm_agenda_disponible')!.disable();
       this.form.get('perm_facturacion')!.disable();
+      this.form.get('insignia')!.disable();
     } else {
-      ['perm_agenda','perm_hc','perm_facturacion'].forEach(p => this.form.get(p)!.enable());
+      ['perm_agenda','perm_hc','perm_agenda_disponible','perm_facturacion','insignia'].forEach(p => this.form.get(p)!.enable());
     }
     this.formError.set('');
     this.panelMode.set('edit');
@@ -99,13 +104,14 @@ export class GestionRolesComponent implements OnInit {
     this.panelMode.set(null);
     this.editingRol.set(null);
     this.form.reset();
-    ['perm_agenda','perm_hc','perm_facturacion'].forEach(p => this.form.get(p)!.enable());
+    ['perm_agenda','perm_hc','perm_agenda_disponible','perm_facturacion','insignia'].forEach(p => this.form.get(p)!.enable());
   }
 
   submit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
-    const data = this.form.getRawValue();
+    const raw  = this.form.getRawValue();
+    const data = { ...raw, insignia: raw.insignia ? raw.insignia.toUpperCase() : null };
 
     const obs = this.panelMode() === 'create'
       ? this.svc.createRol(data)
@@ -113,7 +119,7 @@ export class GestionRolesComponent implements OnInit {
 
     obs.subscribe({
       next: () => { this.saving.set(false); this.closePanel(); this.load(); },
-      error: (e) => { this.formError.set(e.error?.error ?? e.error?.message ?? 'Error.'); this.saving.set(false); },
+      error: (e: any) => { this.formError.set(e.error?.error ?? e.error?.message ?? 'Error.'); this.saving.set(false); },
     });
   }
 
@@ -121,7 +127,7 @@ export class GestionRolesComponent implements OnInit {
     if (!confirm(`¿Eliminar el rol "${rol.tipo}"? Esta acción es irreversible.`)) return;
     this.svc.deleteRol(rol.id).subscribe({
       next: () => this.load(),
-      error: (e) => this.error.set(e.error?.message ?? 'Error al eliminar el rol.'),
+      error: (e: any) => this.error.set(e.error?.message ?? 'Error al eliminar el rol.'),
     });
   }
 

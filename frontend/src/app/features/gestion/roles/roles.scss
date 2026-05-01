@@ -18,3 +18,16 @@
   line-height: 1.4;
   border-radius: 4px;
 }
+
+/* Clase personalizada para el color corporativo */
+.bg-teal {
+    background-color: #0d9e8a !important;
+    color: white;
+}
+
+/* Opcional: Un estilo más suave (tipo "outline") para que no pese tanto en la tabla */
+.badge-soft-teal {
+    background-color: rgba(13, 158, 138, 0.1);
+    color: #0d9e8a;
+    border: 1px solid #0d9e8a;
+}

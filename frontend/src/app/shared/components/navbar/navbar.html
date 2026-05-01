@@ -78,7 +78,11 @@
       <div class="d-none d-lg-flex align-items-center gap-2">
         <span class="navbar-text small opacity-75">
           <i class="bi bi-person-circle me-1"></i>{{ nombreMostrado }}
-          <span class="badge bg-white bg-opacity-25 ms-1" style="font-size:0.65rem">{{ user?.rol?.tipo ?? '' }}</span>
+          <span class="badge ms-1"
+                [style.background]="user?.id === 1 ? '#0d9e8a' : 'rgba(255,255,255,0.25)'"
+                style="font-size:0.65rem; color:#fff;">
+            {{ user?.id === 1 ? 'S.ADMIN' : (user?.rol?.insignia || user?.rol?.tipo || '') }}
+          </span>
         </span>
         <button class="nav-icon-btn" title="Cerrar sesión" (click)="logout()">
           <i class="bi bi-box-arrow-right"></i>
