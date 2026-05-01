@@ -111,7 +111,7 @@ export class GestionRolesComponent implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving.set(true);
     const raw  = this.form.getRawValue();
-    const data = { ...raw, insignia: raw.insignia ? raw.insignia.toUpperCase() : null };
+    const data = { ...raw, insignia: raw.insignia ? raw.insignia.toUpperCase() : undefined };
 
     const obs = this.panelMode() === 'create'
       ? this.svc.createRol(data)

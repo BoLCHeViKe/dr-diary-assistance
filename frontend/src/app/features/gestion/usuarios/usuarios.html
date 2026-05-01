@@ -116,7 +116,7 @@
             <div class="invalid-feedback">Mínimo 8 caracteres</div>
           </div>
           <div class="col-12 col-sm-6">
-            <label class="form-label">DNI</label>
+            <label class="form-label">DNI <span class="text-danger">*</span></label>
             <input type="text" class="form-control font-monospace text-uppercase"
                    formControlName="dni" placeholder="00000000A" maxlength="9"
                    [class.is-invalid]="form.get('dni')!.invalid && form.get('dni')!.touched">
