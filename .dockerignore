@@ -1,0 +1,38 @@
+# Development dependencies and environments
+**/node_modules
+**/jspm_packages
+**/.npm
+**/__pycache__
+**/env # Assuming 'env' is a directory for environment-related files
+**/venv
+**/.venv
+
+# Build artifacts and cache directories
+**/dist
+**/build
+**/out
+**/.next
+**/.angular
+
+# Version control
+.git
+.gitignore
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+.env
+
+# Docker-specific files (not needed inside the image build context)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Database related (e.g., local data volumes)
+mysql_data
