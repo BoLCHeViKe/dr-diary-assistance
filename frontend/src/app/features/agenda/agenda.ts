@@ -172,9 +172,6 @@ export class AgendaComponent implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {
-    const userId = this.auth.getUser()?.id ?? 0;
-    this.selectedMedicoId.set(userId);
-
     if (this.canSwitchMedico) {
       this.svc.getMedicos().subscribe(list => {
         const sorted = [...list].sort((a, b) => {
@@ -183,10 +180,16 @@ export class AgendaComponent implements OnInit {
           return la.localeCompare(lb, 'es');
         });
         this.medicos.set(sorted);
+        if (sorted.length > 0) {
+          this.selectedMedicoId.set(sorted[0].id);
+          this.loadAgenda();
+        }
       });
+    } else {
+      this.selectedMedicoId.set(this.auth.getUser()?.id ?? 0);
+      this.loadAgenda();
     }
 
-    this.loadAgenda();
     this.loadCatalogues();
   }
 

@@ -16,7 +16,7 @@ class PacienteSeeder extends Seeder
         ];
 
         foreach ($pacientes as $p) {
-            DB::table('paciente')->insert([
+            DB::table('paciente')->insertOrIgnore([
                 'id_paciente' => $p[0],
                 'dni' => $p[1],
                 'nombre' => $p[2],

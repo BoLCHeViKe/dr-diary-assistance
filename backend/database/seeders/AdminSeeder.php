@@ -7,6 +7,6 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('admins')->insert(['id' => 1, 'num_auto' => 'A000000001']);
+        DB::table('admins')->insertOrIgnore(['id' => 1, 'num_auto' => 'A000000001']);
     }
 }

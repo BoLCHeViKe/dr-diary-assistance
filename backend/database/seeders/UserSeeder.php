@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($usuarios as $u) {
-            DB::table('users')->insert([
+            DB::table('users')->insertOrIgnore([
                 'id' => $u[0],
                 'email' => $u[1],
                 'password' => bcrypt($u[2]), // Ojo, esto encrypta

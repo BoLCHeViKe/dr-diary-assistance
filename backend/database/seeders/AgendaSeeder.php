@@ -19,22 +19,24 @@ class AgendaSeeder extends Seeder
             return;
         }
 
-        // Agenda para HOY
-        Agenda::create([
-            'id_med'        => $medico->id, // Usamos su ID real (probablemente sea el 2)
-            'fecha'         => Carbon::today()->format('Y-m-d'),
-            'h_inicio'      => '09:00',
-            'h_fin'         => '13:00',
-            'min_intervalo' => 30,
-        ]);
+        if (Agenda::count() === 0) {
+            // Agenda para HOY
+            Agenda::create([
+                'id_med'        => $medico->id,
+                'fecha'         => Carbon::today()->format('Y-m-d'),
+                'h_inicio'      => '09:00',
+                'h_fin'         => '13:00',
+                'min_intervalo' => 30,
+            ]);
 
-        // Agenda para MAÑANA
-        Agenda::create([
-            'id_med'        => $medico->id,
-            'fecha'         => Carbon::tomorrow()->format('Y-m-d'),
-            'h_inicio'      => '16:00',
-            'h_fin'         => '20:00',
-            'min_intervalo' => 20,
-        ]);
+            // Agenda para MAÑANA
+            Agenda::create([
+                'id_med'        => $medico->id,
+                'fecha'         => Carbon::tomorrow()->format('Y-m-d'),
+                'h_inicio'      => '16:00',
+                'h_fin'         => '20:00',
+                'min_intervalo' => 20,
+            ]);
+        }
     }
 }

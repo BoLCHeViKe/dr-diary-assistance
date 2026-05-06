@@ -7,7 +7,7 @@ class LineaFacturaSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('lineafactura')->insert([
+        DB::table('lineafactura')->insertOrIgnore([
             [
                 'num_fact' => 1, 
                 'cantidad' => 1, 

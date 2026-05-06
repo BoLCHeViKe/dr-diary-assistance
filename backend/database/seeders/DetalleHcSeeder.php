@@ -13,7 +13,7 @@ class DetalleHcSeeder extends Seeder
         $cita1 = DB::table('cita')->where('id_paciente', 1)->first();
         $cita2 = DB::table('cita')->where('id_paciente', 2)->first();
 
-        DB::table('detallehc')->insert([
+        DB::table('detallehc')->insertOrIgnore([
             [
                 'nhc'          => $primerNhc,
                 'id_cita'      => $cita1->id_cita ?? null,

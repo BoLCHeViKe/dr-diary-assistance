@@ -7,7 +7,7 @@ class EspecialidadSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('especialidad')->insert([
+        DB::table('especialidad')->insertOrIgnore([
             ['codigo_esp' => 'CARD', 'nombre' => 'Cardiología'],
             ['codigo_esp' => 'DERM', 'nombre' => 'Dermatología'],
             ['codigo_esp' => 'TRAU', 'nombre' => 'Traumatología'],

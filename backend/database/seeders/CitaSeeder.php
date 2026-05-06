@@ -17,31 +17,33 @@ class CitaSeeder extends Seeder
             return;
         }
 
-        Cita::create([
-            'id_agenda'   => $agendaHoy->id_agenda,
-            'id_paciente' => 1,
-            'codigo_esp'  => 'CARD',
-            'id_prest'    => 1,
-            'h_cita'      => '09:00',
-            'estado'      => 'validado',
-        ]);
+        if (Cita::count() === 0) {
+            Cita::create([
+                'id_agenda'   => $agendaHoy->id_agenda,
+                'id_paciente' => 1,
+                'codigo_esp'  => 'CARD',
+                'id_prest'    => 1,
+                'h_cita'      => '09:00',
+                'estado'      => 'atendido',
+            ]);
 
-        Cita::create([
-            'id_agenda'   => $agendaHoy->id_agenda,
-            'id_paciente' => 2,
-            'codigo_esp'  => 'CARD',
-            'id_prest'    => 2,
-            'h_cita'      => '09:30',
-            'estado'      => 'en espera',
-        ]);
+            Cita::create([
+                'id_agenda'   => $agendaHoy->id_agenda,
+                'id_paciente' => 2,
+                'codigo_esp'  => 'CARD',
+                'id_prest'    => 2,
+                'h_cita'      => '09:30',
+                'estado'      => 'en espera',
+            ]);
 
-        Cita::create([
-            'id_agenda'   => $agendaHoy->id_agenda,
-            'id_paciente' => 3,
-            'codigo_esp'  => 'CARD',
-            'id_prest'    => 1,
-            'h_cita'      => '10:30',
-            'estado'      => 'citado',
-        ]);
+            Cita::create([
+                'id_agenda'   => $agendaHoy->id_agenda,
+                'id_paciente' => 3,
+                'codigo_esp'  => 'CARD',
+                'id_prest'    => 1,
+                'h_cita'      => '10:30',
+                'estado'      => 'citado',
+            ]);
+        }
     }
 }

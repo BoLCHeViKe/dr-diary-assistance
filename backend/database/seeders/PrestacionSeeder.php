@@ -7,7 +7,7 @@ class PrestacionSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('prestacion')->insert([
+        DB::table('prestacion')->insertOrIgnore([
             ['codigo_esp' => 'CARD', 'id_prest' => 1, 'nombre' => 'Consulta Cardíaca', 'precio' => 95.00],
             ['codigo_esp' => 'CARD', 'id_prest' => 2, 'nombre' => 'Electrocardiograma', 'precio' => 40.00],
             ['codigo_esp' => 'CARD', 'id_prest' => 3, 'nombre' => 'Prueba de Esfuerzo', 'precio' => 180.00],
