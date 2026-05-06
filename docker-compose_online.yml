@@ -1,0 +1,72 @@
+services:
+
+  mariadb:
+    image: mariadb:11
+    container_name: dda_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MARIADB_DATABASE: "${DB_DATABASE}"
+      MARIADB_USER: "${DB_USERNAME}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - dda_mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      dmz_sucia_net:
+        ipv4_address: 10.10.10.10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: dda_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_NAME: "${APP_NAME}"
+      APP_ENV: "production"
+      APP_KEY: "${APP_KEY}"
+      APP_DEBUG: "false"
+      APP_URL: "${DOMINIO}"
+      DB_CONNECTION: mysql
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_DATABASE: "${DB_DATABASE}"
+      DB_USERNAME: "${DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      dmz_sucia_net:
+        ipv4_address: 10.10.10.11
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: dda_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      dmz_sucia_net:
+        ipv4_address: 10.10.10.12
+
+volumes:
+  dda_mariadb_data:
+
+networks:
+  dmz_sucia_net:
+    external: true
+    name: dmz_sucia_net
