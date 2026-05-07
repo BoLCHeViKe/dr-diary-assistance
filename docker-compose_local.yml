@@ -12,7 +12,8 @@ services:
     ports:
       - "${MARIADB_PORT:-3306}:3306"
     volumes:
-      - dda_mariadb_data:/var/lib/mysql
+      # Cambia dda_mariadb_data:/var/lib/mysql por:
+      - ./mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 10s
@@ -65,6 +66,3 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-
-volumes:
-  dda_mariadb_data:

@@ -10,7 +10,8 @@ services:
       MARIADB_USER: "${DB_USERNAME}"
       MARIADB_PASSWORD: "${DB_PASSWORD}"
     volumes:
-      - dda_mariadb_data:/var/lib/mysql
+      # Cambia dda_mariadb_data:/var/lib/mysql por:
+      - ./mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 10s
@@ -62,9 +63,6 @@ services:
     networks:
       dmz_sucia_net:
         ipv4_address: 10.10.10.12
-
-volumes:
-  dda_mariadb_data:
 
 networks:
   dmz_sucia_net:
