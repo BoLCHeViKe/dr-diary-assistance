@@ -13,6 +13,9 @@ dist/
 # Ignorar el entorno virtual de Python
 venv/
 
+#Tampoco subimos nuestra ddbb
+mysql_data/
+
 
 # Logs
 npm-debug.log*
