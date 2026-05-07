@@ -16,7 +16,6 @@ venv/
 #Tampoco subimos nuestra ddbb
 mysql_data/
 
-
 # Logs
 npm-debug.log*
 yarn-debug.log*
