@@ -44,7 +44,7 @@ class HcController extends Controller
         }
 
         $detalles = DetalleHc::where('nhc', $hc->nhc)
-                             ->with(['cita.agenda', 'cita.paciente'])
+                             ->with(['cita.agenda.medicoUsuario', 'cita.paciente'])
                              ->orderBy('f_consulta', 'desc')
                              ->get();
 

@@ -63,6 +63,10 @@ export class AgendaService {
     return this.http.post<Agenda>(`/api/medicos/${idMedico}/agendas`, data);
   }
 
+  updateAgenda(idMedico: number, idAgenda: number, data: { h_inicio: string; h_fin: string }) {
+    return this.http.put<Agenda>(`/api/medicos/${idMedico}/agendas/${idAgenda}`, data);
+  }
+
   deleteAgenda(idMedico: number, idAgenda: number) {
     return this.http.delete(`/api/medicos/${idMedico}/agendas/${idAgenda}`);
   }

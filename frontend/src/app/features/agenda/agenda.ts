@@ -7,13 +7,14 @@ import { AuthService } from '../../core/services/auth.service';
 import { PacienteSelectorComponent } from '../../shared/components/paciente-selector/paciente-selector';
 import { AgendaCalendarioComponent } from './agenda-calendario/agenda-calendario';
 import { HistoriaClinicaComponent } from '../historia-clinica/historia-clinica';
+import { TimePickerComponent } from '../../shared/components/time-picker/time-picker';
 
-type PanelMode = null | 'create-agenda' | 'create-cita' | 'view-cita' | 'edit-cita' | 'create-paciente' | 'view-hc' | 'add-consulta';
+type PanelMode = null | 'create-agenda' | 'create-cita' | 'view-cita' | 'edit-cita' | 'create-paciente' | 'view-hc' | 'add-consulta' | 'edit-agenda';
 type EstadoCita = 'citado' | 'en espera' | 'atendido' | 'facturado';
 
 @Component({
   selector: 'app-agenda',
-  imports: [ReactiveFormsModule, CurrencyPipe, PacienteSelectorComponent, AgendaCalendarioComponent, HistoriaClinicaComponent],
+  imports: [ReactiveFormsModule, CurrencyPipe, PacienteSelectorComponent, AgendaCalendarioComponent, HistoriaClinicaComponent, TimePickerComponent],
   templateUrl: './agenda.html',
   styleUrl: './agenda.scss',
 })
@@ -53,6 +54,7 @@ export class AgendaComponent implements OnInit {
 
   // ── Saving flags ──────────────────────────────────────────────────────────
   savingAgenda        = signal(false);
+  savingEditAgenda    = signal(false);
   savingCita          = signal(false);
   updatingEstado      = signal(false);
   savingEditCita      = signal(false);
@@ -72,8 +74,8 @@ export class AgendaComponent implements OnInit {
 
   // ── Forms ─────────────────────────────────────────────────────────────────
   agendaForm = this.fb.nonNullable.group({
-    h_inicio:      ['09:00', Validators.required],
-    h_fin:         ['14:00', Validators.required],
+    h_inicio:      ['09:00', [Validators.required, Validators.pattern(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)]],
+    h_fin:         ['14:00', [Validators.required, Validators.pattern(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)]],
     min_intervalo: [15,      Validators.required],
   });
 
@@ -85,6 +87,11 @@ export class AgendaComponent implements OnInit {
   editCitaForm = this.fb.nonNullable.group({
     codigo_esp: ['', Validators.required],
     id_prest:   [0,  [Validators.required, Validators.min(1)]],
+  });
+
+  editAgendaForm = this.fb.nonNullable.group({
+    h_inicio: ['', [Validators.required, Validators.pattern(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)]],
+    h_fin:    ['', [Validators.required, Validators.pattern(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)]],
   });
 
   createPacienteForm = this.fb.nonNullable.group({
@@ -276,6 +283,7 @@ export class AgendaComponent implements OnInit {
     this.editCitaPatient.set(null);
     this.editCitaEsp.set('');
     this.agendaForm.reset({ h_inicio: '09:00', h_fin: '14:00', min_intervalo: 15 });
+    this.editAgendaForm.reset({ h_inicio: '', h_fin: '' });
     this.citaForm.reset({ codigo_esp: '', id_prest: 0 });
     this.editCitaForm.reset({ codigo_esp: '', id_prest: 0 });
     this.createPacienteForm.reset();
@@ -367,6 +375,30 @@ export class AgendaComponent implements OnInit {
     this.svc.deleteCita(ag.id_agenda, cita.id_cita).subscribe({
       next: () => { this.closePanel(); this.loadAgenda(); },
       error: (e) => { this.error.set(e.error?.message ?? 'Error al cancelar la cita.'); },
+    });
+  }
+
+  openEditAgenda() {
+    const ag = this.agenda();
+    if (!ag) return;
+    this.editAgendaForm.patchValue({ h_inicio: ag.h_inicio.substring(0, 5), h_fin: ag.h_fin.substring(0, 5) });
+    this.panelError.set('');
+    this.panelMode.set('edit-agenda');
+  }
+
+  submitEditAgenda() {
+    if (this.editAgendaForm.invalid) { this.editAgendaForm.markAllAsTouched(); return; }
+    const ag = this.agenda();
+    if (!ag) return;
+    this.savingEditAgenda.set(true);
+    this.panelError.set('');
+    const { h_inicio, h_fin } = this.editAgendaForm.getRawValue();
+    this.svc.updateAgenda(this.medicoId, ag.id_agenda, { h_inicio, h_fin }).subscribe({
+      next: () => { this.savingEditAgenda.set(false); this.closePanel(); this.loadAgenda(); },
+      error: (e) => {
+        this.panelError.set(e.error?.message ?? e.error?.error ?? 'Error al actualizar la agenda.');
+        this.savingEditAgenda.set(false);
+      },
     });
   }
 

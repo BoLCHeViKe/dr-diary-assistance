@@ -34,10 +34,11 @@
       <table class="table table-sm hc-table">
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Esp.</th>
+            <th class="hc-th-fecha">Fecha</th>
+            <th class="hc-th-esp">Esp.</th>
+            <th class="hc-th-prof">Prof.</th>
             <th>Motivo</th>
-            <th></th>
+            <th class="hc-th-actions"></th>
           </tr>
         </thead>
         <tbody>
@@ -45,6 +46,7 @@
             <tr>
               <td class="hc-fecha">{{ formatFecha(d.f_consulta) }}</td>
               <td class="hc-esp font-monospace">{{ d.cita?.codigo_esp ?? '—' }}</td>
+              <td class="hc-prof font-monospace" [title]="d.cita?.agenda?.medico_usuario ? (d.cita!.agenda!.medico_usuario!.apellido1 + ', ' + d.cita!.agenda!.medico_usuario!.nombre) : ''">{{ iniciales(d) }}</td>
               <td class="hc-motivo">{{ d.mov_consulta || '—' }}</td>
               <td class="hc-actions">
                 @if (canEdit(d)) {
@@ -74,9 +76,11 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Tratamiento <span class="text-muted small">(máx. 60 car.)</span></label>
+        <label class="form-label">Tratamiento <span class="text-danger">*</span></label>
         <input type="text" class="form-control form-control-sm" formControlName="tto"
-               maxlength="60">
+               maxlength="60"
+               [class.is-invalid]="form.get('tto')!.invalid && form.get('tto')!.touched">
+        <div class="invalid-feedback">Obligatorio (máx. 60 caracteres)</div>
       </div>
 
       <div class="mb-3">
@@ -119,9 +123,11 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Tratamiento <span class="text-muted small">(máx. 60 car.)</span></label>
+        <label class="form-label">Tratamiento <span class="text-danger">*</span></label>
         <input type="text" class="form-control form-control-sm" formControlName="tto"
-               maxlength="60">
+               maxlength="60"
+               [class.is-invalid]="form.get('tto')!.invalid && form.get('tto')!.touched">
+        <div class="invalid-feedback">Obligatorio (máx. 60 caracteres)</div>
       </div>
 
       <div class="mb-3">

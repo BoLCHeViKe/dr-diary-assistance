@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agenda;
+use App\Models\Cita;
 use App\Models\Medico;
 use Illuminate\Http\Request;
 
@@ -102,6 +103,31 @@ class AgendaController extends Controller
                 },
             ],
         ]);
+
+        // Validate against existing citas
+        $newInicio = $request->h_inicio ?? $agenda->h_inicio;
+        $newFin    = $request->h_fin    ?? $agenda->h_fin;
+
+        $citas = Cita::where('id_agenda', $agenda->id_agenda)
+                     ->orderBy('h_cita')
+                     ->get();
+
+        if ($citas->isNotEmpty()) {
+            $firstCita = substr($citas->first()->h_cita, 0, 5);
+            $lastCita  = substr($citas->last()->h_cita, 0, 5);
+            $lastCitaEnd = date('H:i', strtotime($lastCita) + $agenda->min_intervalo * 60);
+
+            if ($newInicio > $firstCita) {
+                return response()->json([
+                    'message' => "No se puede adelantar el inicio: hay una cita a las {$firstCita}.",
+                ], 422);
+            }
+            if ($newFin < $lastCitaEnd) {
+                return response()->json([
+                    'message' => "No se puede adelantar el cierre: la última cita termina a las {$lastCitaEnd}.",
+                ], 422);
+            }
+        }
 
         $agenda->fill($request->only(['fecha', 'h_inicio', 'h_fin', 'min_intervalo']));
 

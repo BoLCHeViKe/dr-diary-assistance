@@ -90,10 +90,16 @@
         <span class="text-success fw-semibold">{{ freeSlotsCount() }} libre{{ freeSlotsCount() !== 1 ? 's' : '' }}</span>
         <span class="info-sep">·</span>
         <span>{{ slots().length }} huecos</span>
-        <button class="btn btn-sm btn-outline-danger ms-auto" title="Eliminar agenda del día"
-                (click)="confirmDeleteAgenda()">
-          <i class="bi bi-trash"></i>
-        </button>
+        <div class="info-bar-btns ms-auto">
+          <button class="btn btn-outline-secondary" title="Editar horario de la agenda"
+                  (click)="openEditAgenda()">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-outline-danger" title="Eliminar agenda del día"
+                  (click)="confirmDeleteAgenda()">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
       </div>
     }
 
@@ -166,6 +172,7 @@
     <!-- Panel header -->
     <div class="panel-header">
       @if (panelMode() === 'create-agenda')   { <span>Nueva agenda</span> }
+      @if (panelMode() === 'edit-agenda')     { <span>Editar horario · <strong>{{ dateDMY() }}</strong></span> }
       @if (panelMode() === 'create-cita')     { <span>Nueva cita · <strong>{{ selectedSlot() }} h {{ dateDMY() }}</strong></span> }
       @if (panelMode() === 'view-cita')       { <span>Cita · <strong>{{ fmt(selectedCita()!.h_cita) }} h {{ dateDMY() }}</strong></span> }
       @if (panelMode() === 'edit-cita')       { <span>Editar cita · <strong>{{ fmt(selectedCita()!.h_cita) }} h {{ dateDMY() }}</strong></span> }
@@ -183,16 +190,20 @@
 
         <div class="mb-3">
           <label class="form-label">Hora inicio</label>
-          <input type="time" class="form-control" formControlName="h_inicio"
-                 [class.is-invalid]="agendaForm.get('h_inicio')!.invalid && agendaForm.get('h_inicio')!.touched">
-          <div class="invalid-feedback">Obligatorio</div>
+          <app-time-picker formControlName="h_inicio"
+            [invalid]="agendaForm.get('h_inicio')!.invalid && agendaForm.get('h_inicio')!.touched" />
+          @if (agendaForm.get('h_inicio')!.invalid && agendaForm.get('h_inicio')!.touched) {
+            <div class="text-danger small mt-1">Obligatorio (formato HH:MM, ej. 09:00)</div>
+          }
         </div>
 
         <div class="mb-3">
           <label class="form-label">Hora fin</label>
-          <input type="time" class="form-control" formControlName="h_fin"
-                 [class.is-invalid]="agendaForm.get('h_fin')!.invalid && agendaForm.get('h_fin')!.touched">
-          <div class="invalid-feedback">Obligatorio</div>
+          <app-time-picker formControlName="h_fin"
+            [invalid]="agendaForm.get('h_fin')!.invalid && agendaForm.get('h_fin')!.touched" />
+          @if (agendaForm.get('h_fin')!.invalid && agendaForm.get('h_fin')!.touched) {
+            <div class="text-danger small mt-1">Obligatorio (formato HH:MM, ej. 14:00)</div>
+          }
         </div>
 
         <div class="mb-4">
@@ -211,6 +222,52 @@
             }
             Crear agenda
           </button>
+        </div>
+
+      </form>
+    }
+
+    <!-- ── EDIT AGENDA ───────────────────────────────────────────────── -->
+    @if (panelMode() === 'edit-agenda') {
+      <form [formGroup]="editAgendaForm" (ngSubmit)="submitEditAgenda()" class="panel-body">
+
+        @if (panelError()) {
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ panelError() }}
+          </div>
+        }
+
+        <p class="text-muted small mb-4">
+          Solo se puede editar el horario. El intervalo por cita no es modificable
+          una vez creada la agenda.
+        </p>
+
+        <div class="mb-3">
+          <label class="form-label">Hora inicio</label>
+          <app-time-picker formControlName="h_inicio"
+            [invalid]="editAgendaForm.get('h_inicio')!.invalid && editAgendaForm.get('h_inicio')!.touched" />
+          @if (editAgendaForm.get('h_inicio')!.invalid && editAgendaForm.get('h_inicio')!.touched) {
+            <div class="text-danger small mt-1">Obligatorio (formato HH:MM)</div>
+          }
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Hora fin</label>
+          <app-time-picker formControlName="h_fin"
+            [invalid]="editAgendaForm.get('h_fin')!.invalid && editAgendaForm.get('h_fin')!.touched" />
+          @if (editAgendaForm.get('h_fin')!.invalid && editAgendaForm.get('h_fin')!.touched) {
+            <div class="text-danger small mt-1">Obligatorio (formato HH:MM)</div>
+          }
+        </div>
+
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-primary" [disabled]="savingEditAgenda()">
+            @if (savingEditAgenda()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="bi bi-check-circle me-1"></i>Guardar cambios
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="closePanel()">Cancelar</button>
         </div>
 
       </form>

@@ -18,7 +18,7 @@ class DetalleHcController extends Controller
         }
 
         $detalles = DetalleHc::where('nhc', $nhc)
-                             ->with(['cita.agenda', 'cita.paciente'])
+                             ->with(['cita.agenda.medicoUsuario', 'cita.paciente'])
                              ->orderBy('f_consulta', 'desc')
                              ->get();
 
@@ -33,7 +33,7 @@ class DetalleHcController extends Controller
     {
         $detalle = DetalleHc::where('nhc', $nhc)
                             ->where('num_orden', $num_orden)
-                            ->with(['cita.agenda', 'cita.paciente'])
+                            ->with(['cita.agenda.medicoUsuario', 'cita.paciente'])
                             ->first();
 
         if (!$detalle) {
@@ -53,7 +53,7 @@ class DetalleHcController extends Controller
 
         $request->validate([
             'mov_consulta' => 'required|string|max:32',
-            'tto'          => 'nullable|string|max:60',
+            'tto'          => 'required|string|max:60',
             'f_consulta'   => 'nullable|date',
             'sinto'        => 'nullable|string',
             'diag'         => 'nullable|string|max:80',
@@ -61,8 +61,9 @@ class DetalleHcController extends Controller
         ]);
 
         // Si viene id_cita, verificamos que la cita pertenece al paciente de esta HC
+        $cita = null;
         if ($request->id_cita) {
-            $cita     = Cita::find($request->id_cita);
+            $cita     = Cita::with('agenda')->find($request->id_cita);
             $paciente = $hc->paciente;
 
             if (!$paciente || $cita->id_paciente !== $paciente->id_paciente) {
@@ -78,19 +79,22 @@ class DetalleHcController extends Controller
             }
         }
 
-        // El trigger trg_detallehc_num_orden_auto asigna num_orden automáticamente
-        // El trigger trg_detallehc_comprobar_fecha_ins valida f_consulta
+        // Usar la fecha de la agenda de la cita; si no hay cita, fecha de hoy
+        $f_consulta = $request->f_consulta
+            ?? $cita?->agenda?->fecha
+            ?? now()->toDateString();
+
         $detalle = DetalleHc::create([
             'nhc'          => $nhc,
             'id_cita'      => $request->id_cita ?? null,
             'mov_consulta' => trim($request->mov_consulta),
-            'tto'          => $request->tto ? trim($request->tto) : null,
-            'f_consulta'   => $request->f_consulta ?? '1900-01-01',
+            'tto'          => trim($request->tto),
+            'f_consulta'   => $f_consulta,
             'sinto'        => $request->sinto,
             'diag'         => $request->diag,
         ]);
 
-        return response()->json($detalle->load(['cita.agenda', 'cita.paciente']), 201);
+        return response()->json($detalle->load(['cita.agenda.medicoUsuario', 'cita.paciente']), 201);
     }
 
     // PUT /api/hcs/{nhc}/detalles/{num_orden}
@@ -130,7 +134,7 @@ class DetalleHcController extends Controller
         // Recargamos el detalle actualizado
         $detalle = DetalleHc::where('nhc', $nhc)
                             ->where('num_orden', $num_orden)
-                            ->with(['cita.agenda', 'cita.paciente'])
+                            ->with(['cita.agenda.medicoUsuario', 'cita.paciente'])
                             ->first();
 
         return response()->json($detalle);

@@ -1,0 +1,56 @@
+<div class="tp-wrapper">
+  <div class="input-group input-group-sm">
+    <input
+      type="text"
+      class="form-control form-control-sm tp-input"
+      [class.is-invalid]="invalid"
+      [placeholder]="placeholder"
+      [value]="displayValue()"
+      [disabled]="disabled()"
+      maxlength="5"
+      (input)="onInputChange($event)"
+    />
+    <button
+      type="button"
+      class="btn btn-outline-secondary tp-btn"
+      [class.is-invalid]="invalid"
+      [disabled]="disabled()"
+      (click)="togglePicker()"
+      tabindex="-1"
+    >
+      <i class="bi bi-clock"></i>
+    </button>
+  </div>
+
+  @if (open()) {
+    <div class="tp-dropdown">
+      <div class="tp-col-header">
+        <span>H</span>
+        <span>M</span>
+      </div>
+      <div class="tp-cols">
+        <!-- Hours -->
+        <ul class="tp-col" #hourList>
+          @for (h of hours; track h) {
+            <li
+              class="tp-item"
+              [class.active]="selectedH() === h"
+              (click)="pickHour(h)"
+            >{{ pad(h) }}</li>
+          }
+        </ul>
+
+        <!-- Minutes -->
+        <ul class="tp-col" #minuteList>
+          @for (m of minutes; track m) {
+            <li
+              class="tp-item"
+              [class.active]="selectedM() === m"
+              (click)="pickMinute(m)"
+            >{{ pad(m) }}</li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+</div>

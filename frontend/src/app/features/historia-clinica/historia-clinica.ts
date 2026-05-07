@@ -36,7 +36,7 @@ export class HistoriaClinicaComponent implements OnInit {
   // ── Form ──────────────────────────────────────────────────────────────────
   form = this.fb.nonNullable.group({
     mov_consulta: ['', [Validators.required, Validators.maxLength(32)]],
-    tto:          ['', Validators.maxLength(60)],
+    tto:          ['', [Validators.required, Validators.maxLength(60)]],
     sinto:        [''],
     diag:         ['', Validators.maxLength(80)],
   });
@@ -45,7 +45,16 @@ export class HistoriaClinicaComponent implements OnInit {
   get currentUserId(): number { return this.auth.getUser()?.id ?? 0; }
 
   canEdit(d: DetalleHc): boolean {
-    return d.cita?.agenda?.id_med === this.currentUserId;
+    return Number(d.cita?.agenda?.id_med) === Number(this.currentUserId);
+  }
+
+  iniciales(d: DetalleHc): string {
+    const u = d.cita?.agenda?.medico_usuario;
+    if (!u) return '—';
+    return [u.nombre, u.apellido1, u.apellido2]
+      .filter(Boolean)
+      .map(s => s![0].toUpperCase())
+      .join('');
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -97,7 +106,7 @@ export class HistoriaClinicaComponent implements OnInit {
         this.modo.set('ver');
       },
       error: (e) => {
-        this.error.set(e.error?.error ?? e.error?.message ?? 'Error al guardar.');
+        this.error.set(e.error?.message ?? e.error?.error ?? 'Error al guardar.');
         this.saving.set(false);
       },
     });

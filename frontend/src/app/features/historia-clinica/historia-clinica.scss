@@ -17,6 +17,8 @@
 
 .hc-table {
   font-size: 0.82rem;
+  table-layout: fixed;
+  width: 100%;
 
   thead th {
     font-size: 0.72rem;
@@ -33,10 +35,17 @@
     vertical-align: middle;
   }
 
-  .hc-fecha    { white-space: nowrap; color: #5a6a7a; }
-  .hc-esp      { font-size: 0.75rem; color: #04078B; font-weight: 700; }
-  .hc-motivo   { color: #2d3a4a; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hc-actions  { text-align: right; white-space: nowrap; }
+  // Fixed-width narrow columns — MOTIVO toma el resto automáticamente
+  .hc-th-fecha    { width: 75px; }
+  .hc-th-esp      { width: 38px; }
+  .hc-th-prof     { width: 42px; }
+  .hc-th-actions  { width: 32px; }
+
+  .hc-fecha   { white-space: nowrap; color: #5a6a7a; font-size: 0.78rem; }
+  .hc-esp     { font-size: 0.75rem; color: #04078B; font-weight: 700; }
+  .hc-prof    { font-size: 0.72rem; color: #6c757d; font-weight: 600; text-align: center; cursor: default; }
+  .hc-motivo  { color: #2d3a4a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hc-actions { text-align: right; white-space: nowrap; }
 }
 
 .btn-xs {

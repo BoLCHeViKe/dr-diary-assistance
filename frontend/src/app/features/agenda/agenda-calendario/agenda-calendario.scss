@@ -71,7 +71,8 @@
   // Days with an open agenda: light blue filled circle
   &--has-agenda:not(.cal-cell--selected) {
     background: #dbeeff;
-
+    border-bottom: 4px solid #0077b6;
+    //Ver bordes
     .cal-num {
       color: #0059b3;
       font-weight: 700;
@@ -100,6 +101,11 @@
     .cal-num {
       color: #fff;
       font-weight: 700;
+    }
+
+    // Selected + has agenda: keep the blue bottom border
+    &.cal-cell--has-agenda {
+      border-bottom: 4px solid #0077b6;
     }
   }
 }

@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Agenda extends Model
 {
@@ -16,9 +17,16 @@ class Agenda extends Model
         'id_med'
     ];
 
+    protected $casts = ['id_med' => 'integer'];
+
     public function medico()
     {
         return $this->belongsTo(Medico::class, 'id_med', 'id');
+    }
+
+    public function medicoUsuario()
+    {
+        return $this->belongsTo(User::class, 'id_med', 'id');
     }
 
     public function citas()

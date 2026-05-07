@@ -1,0 +1,92 @@
+.tp-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.tp-input {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.tp-btn {
+  border-left: 0;
+
+  &.is-invalid {
+    border-color: var(--bs-danger);
+  }
+}
+
+// ── Dropdown ────────────────────────────────────────────────────────────────
+.tp-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1060;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.tp-col-header {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  background: #f8f9fa;
+
+  span {
+    flex: 1;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6c757d;
+    padding: 4px 0;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+.tp-cols {
+  display: flex;
+}
+
+.tp-col {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+
+  &:not(:last-child) {
+    border-right: 1px solid #dee2e6;
+  }
+
+  // thin scrollbar
+  &::-webkit-scrollbar       { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 2px; }
+}
+
+.tp-item {
+  text-align: center;
+  padding: 5px 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover {
+    background: #e9ecef;
+  }
+
+  &.active {
+    background: var(--bs-primary);
+    color: #fff;
+    font-weight: 600;
+  }
+}

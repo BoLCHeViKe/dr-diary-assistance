@@ -15,8 +15,14 @@ export interface DetalleHc {
     codigo_esp: string;
     estado:     string;
     agenda?: {
-      id_agenda: number;
-      id_med:    number;
+      id_agenda:       number;
+      id_med:          number;
+      medico_usuario?: {
+        id:        number;
+        nombre:    string;
+        apellido1: string;
+        apellido2?: string;
+      };
     };
   };
 }
