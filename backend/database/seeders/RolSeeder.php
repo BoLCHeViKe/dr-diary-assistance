@@ -10,6 +10,7 @@ class RolSeeder extends Seeder
         DB::table('rol')->insertOrIgnore([
             'id'                       => 1,
             'tipo'                     => 'ADMIN',
+            'insignia'                 => 'S.ADMIN',
             'perm_agenda'              => true,
             'perm_agenda_disponible'   => true,
             'perm_hc'                  => true,
@@ -25,6 +26,7 @@ class RolSeeder extends Seeder
         DB::table('rol')->insertOrIgnore([
             'id'                     => 2,
             'tipo'                   => 'MEDICO',
+            'insignia'               => 'MEDICO',
             'perm_agenda'            => true,
             'perm_agenda_disponible' => true,
             'perm_hc'                => true,

@@ -30,12 +30,12 @@
           <tr>
             <td>
               <span class="fw-bold">{{ rol.tipo }}</span>
-              @if (rol.id === 1) {
-                <span class="badge ms-2" style="background:#0d9e8a;color:#fff;">S.ADMIN</span>
-              } @else if (rol.id === 2) {
-                <span class="badge bg-primary ms-2">MEDICO</span>
-              } @else if (rol.insignia) {
-                <span class="badge bg-primary ms-2">{{ rol.insignia }}</span>
+              @if (rol.insignia) {
+                @if (rol.id === 1) {
+                  <span class="badge ms-2" style="background:#0d9e8a;color:#fff;">{{ rol.insignia }}</span>
+                } @else {
+                  <span class="badge bg-primary ms-2">{{ rol.insignia }}</span>
+                }
               }
             </td>
             <td class="text-center">
