@@ -12,7 +12,7 @@
 El sistema cubre el ciclo completo de la consulta:
 
 ```
-Paciente agenda cita �?Triaje y atención �?Historia Clínica �?Facturación �?Gestión de abonos
+Paciente agenda cita → Triaje y atención → Historia Clínica → Facturación → Gestión de abonos
 ```
 
 Diseñada para ser **ligera, intuitiva y escalable**, se presenta como alternativa a soluciones sobredimensionadas del mercado (OMI360, Diraya), enfocándose en el médico autónomo o pequeña clínica.
@@ -35,12 +35,12 @@ https://dr.diary.[dominio].es
 
 ---
 
-## �?Funcionalidades Principales
+## ✨ Funcionalidades Principales
 
-### 🗓�?Gestión de Agenda
+### 🗓️ Gestión de Agenda
 - Calendario interactivo con visualización de citas del día
 - Creación de citas en slots disponibles con asignación de especialidad y acto
-- Estados de cita: **Citado �?En Espera �?Atendido �?Facturado**
+- Estados de cita: **Citado → En Espera → Atendido → Facturado**
 - Responsive: adaptado a desktop, tablet y móvil
 
 ### 👤 Gestión de Pacientes
@@ -56,7 +56,7 @@ https://dr.diary.[dominio].es
 ### 🧾 Facturación
 - Facturación directa desde la agenda o desde el módulo de facturación
 - Soporte de múltiples líneas y unidades por factura
-- Sistema de **abonos parciales y anulación total** con coherencia financiera (el total nunca puede superar el importe original �?validado por trigger)
+- Sistema de **abonos parciales y anulación total** con coherencia financiera (el total nunca puede superar el importe original — validado por trigger)
 - Listado de facturas filtrable por fechas, estado, especialidad y paciente
 
 ### 🔐 Gestión de Roles y Permisos
@@ -72,7 +72,7 @@ https://dr.diary.[dominio].es
 
 ---
 
-## 🛠�?Stack Tecnológico
+## 🛠️ Stack Tecnológico
 
 ### Frontend
 | Tecnología | Versión | Uso |
@@ -80,11 +80,11 @@ https://dr.diary.[dominio].es
 | **Angular** | 21 | Framework SPA principal |
 | **TypeScript** | 5.9 | Lenguaje principal |
 | **RxJS** | 7 | Streams y llamadas HTTP |
-| **Angular Signals** | �?| Gestión de estado reactivo |
-| **Angular Guards** | �?| Protección de rutas por rol |
+| **Angular Signals** | — | Gestión de estado reactivo |
+| **Angular Guards** | — | Protección de rutas por rol |
 | **Bootstrap** | 5.3 | Grid, componentes y utilidades |
 | **Bootstrap Icons** | 1.13 | Iconografía médica |
-| **SCSS / Sass** | �?| Estilos y variables CSS |
+| **SCSS / Sass** | — | Estilos y variables CSS |
 | **Angular CLI + Vite** | 8 | Build y servidor de desarrollo |
 
 ### Backend
@@ -92,17 +92,17 @@ https://dr.diary.[dominio].es
 |-----------|---------|-----|
 | **Laravel** | 13 | Framework API REST (MVC) |
 | **PHP** | 8.4 | Lenguaje backend |
-| **Eloquent ORM** | �?| Abstracción y comunicación con BBDD |
-| **Laravel Sanctum** | �?| Autenticación API con tokens Bearer |
-| **Bcrypt** | �?| Hash seguro de contraseñas |
-| **Composer + Artisan** | �?| Gestión de dependencias, migraciones y seeders |
+| **Eloquent ORM** | — | Abstracción y comunicación con BBDD |
+| **Laravel Sanctum** | — | Autenticación API con tokens Bearer |
+| **Bcrypt** | — | Hash seguro de contraseñas |
+| **Composer + Artisan** | — | Gestión de dependencias, migraciones y seeders |
 
 ### Base de Datos
 | Tecnología | Versión | Detalle |
 |-----------|---------|---------|
 | **MariaDB** | 11 | Motor principal |
-| **InnoDB** | �?| Storage engine con soporte ACID |
-| **MySQL Workbench** | �?| Diseño y administración |
+| **InnoDB** | — | Storage engine con soporte ACID |
+| **MySQL Workbench** | — | Diseño y administración |
 
 > Modelo relacional normalizado (3FN) con claves primarias autoincrementales, índices FK optimizados, vistas, triggers y procedimientos almacenados.
 
@@ -125,17 +125,38 @@ https://dr.diary.[dominio].es
 
 ---
 
-## 🏗�?Arquitectura del Sistema
+## 🏗️ Arquitectura del Sistema
 
 ```
-┌─────────────────────────────────────────────────────────────�?�?                       INTERNET                             �?└──────────────────────────┬──────────────────────────────────�?                           �?HTTPS :443
-                    ┌──────▼───────�?                    �?  Router +   �?                    �? Firewall    �? �?VLAN50 DMZ (sucia)
-                    �? DDNS Script �?                    └──────┬───────�?                           �?:10443
-              ┌────────────▼────────────�?              �?  Docker: NGINX         �? �?Reverse Proxy
-              �?  (red macvlan)         �?   SSL Let's Encrypt
-              └────────────┬────────────�?                    ┌──────┴──────�?          ┌─────────▼──�?   ┌────▼──────────�?          �?Docker:    �?   �?Docker:       �?          �?Angular    �?   �?Laravel +     �?          �?(Nginx)    �?   �?PHP-FPM       �?          └────────────�?   └──────┬────────�?                                   �?                          ┌────────▼────────�?                          �?Docker:         �?                          �?MariaDB 11      �?                          �?(Bindmount)     �?                          └─────────────────�?```
+┌─────────────────────────────────────────────────────────────┐
+│                        INTERNET                             │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTPS :443
+                    ┌──────▼───────┐
+                    │   Router +   │
+                    │  Firewall    │  ← VLAN50 DMZ (sucia)
+                    │  DDNS Script │
+                    └──────┬───────┘
+                           │ :10443
+              ┌────────────▼────────────┐
+              │   Docker: NGINX         │  ← Reverse Proxy
+              │   (red macvlan)         │    SSL Let's Encrypt
+              └────────────┬────────────┘
+                    ┌──────┴──────┐
+          ┌─────────▼──┐    ┌────▼──────────┐
+          │ Docker:    │    │ Docker:       │
+          │ Angular    │    │ Laravel +     │
+          │ (Nginx)    │    │ PHP-FPM       │
+          └────────────┘    └──────┬────────┘
+                                   │
+                          ┌────────▼────────┐
+                          │ Docker:         │
+                          │ MariaDB 11      │
+                          │ (Bindmount)     │
+                          └─────────────────┘
+```
 
-**Arquitectura lógica:** MVC desacoplado �?Angular (SPA) �?API REST JSON �?Laravel �?MariaDB
+**Arquitectura lógica:** MVC desacoplado — Angular (SPA) ↔ API REST JSON ↔ Laravel ↔ MariaDB
 
 ---
 
@@ -144,21 +165,21 @@ https://dr.diary.[dominio].es
 ```
 dr-diary-assistance/
 ├── backend/                    # Laravel 13 (PHP 8.4)
-�?  ├── app/Http/Controllers/Api/   # Controladores REST
-�?  ├── app/Models/             # Modelos Eloquent
-�?  ├── database/
-�?  �?  ├── migrations/         # Creación de tablas y triggers
-�?  �?  └── seeders/            # Datos iniciales (mock)
-�?  ├── routes/api.php          # Rutas API REST
-�?  ├── Dockerfile              # Build desarrollo
-�?  └── Dockerfile.prod         # Build producción
+│   ├── app/Http/Controllers/Api/   # Controladores REST
+│   ├── app/Models/             # Modelos Eloquent
+│   ├── database/
+│   │   ├── migrations/         # Creación de tablas y triggers
+│   │   └── seeders/            # Datos iniciales (mock)
+│   ├── routes/api.php          # Rutas API REST
+│   ├── Dockerfile              # Build desarrollo
+│   └── Dockerfile.prod         # Build producción
 ├── frontend/                   # Angular 21 (TypeScript 5.9)
-�?  ├── src/app/
-�?  �?  ├── components/         # Componentes (TS + HTML + SCSS)
-�?  �?  ├── services/           # Servicios HTTP
-�?  �?  ├── interfaces/         # Modelos de datos TS
-�?  �?  └── guards/             # Guards de roles y autenticación
-�?  └── Dockerfile
+│   ├── src/app/
+│   │   ├── components/         # Componentes (TS + HTML + SCSS)
+│   │   ├── services/           # Servicios HTTP
+│   │   ├── interfaces/         # Modelos de datos TS
+│   │   └── guards/             # Guards de roles y autenticación
+│   └── Dockerfile
 ├── docker-compose.yml          # Orquestación producción
 ├── docker-compose.lan.yml      # Orquestación desarrollo local
 ├── .env.example_lan            # Variables entorno desarrollo
@@ -168,7 +189,7 @@ dr-diary-assistance/
 
 ---
 
-## �?Instalación y Despliegue
+## ⚡ Instalación y Despliegue
 
 ### Requisitos previos
 - Docker & Docker Compose instalados
@@ -178,7 +199,7 @@ dr-diary-assistance/
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/BoLCHeViKe/dr-diary-assistance.git
+git clone https://github.com/tu-usuario/dr-diary-assistance.git
 cd dr-diary-assistance
 
 # 2. Configurar variables de entorno
@@ -207,7 +228,7 @@ docker exec dda_mariadb mariadb-dump -u root -p"${DB_ROOT_PASSWORD}" \
 
 ---
 
-## 🗄�?Modelo de Datos (Resumen)
+## 🗄️ Modelo de Datos (Resumen)
 
 ```
 USUARIO ──< ADMINS
@@ -221,23 +242,23 @@ FACTURA ──> PACIENTE
 
 ---
 
-## �?Pruebas
+## ✅ Pruebas
 
 Pruebas funcionales realizadas sobre la API REST con **Bruno** (alternativa open source a Postman):
 
 | Caso de Uso | Estado | Fecha |
 |-------------|--------|-------|
-| Login / Autenticación | �?PASS | 12/05/2026 |
-| Incorporar episodio clínico | �?PASS | 12/05/2026 |
-| Facturar acto desde agenda | �?PASS | 13/05/2026 |
-| Gestionar Historia Clínica | �?PASS | 14/05/2026 |
-| Elaborar episodio clínico | �?PASS | 14/05/2026 |
-| Añadir especialidades y actos | �?PASS | 15/05/2026 |
-| Agendar y citar paciente | �?PASS | 15/05/2026 |
+| Login / Autenticación | ✅ PASS | 12/05/2026 |
+| Incorporar episodio clínico | ✅ PASS | 12/05/2026 |
+| Facturar acto desde agenda | ✅ PASS | 13/05/2026 |
+| Gestionar Historia Clínica | ✅ PASS | 14/05/2026 |
+| Elaborar episodio clínico | ✅ PASS | 14/05/2026 |
+| Añadir especialidades y actos | ✅ PASS | 15/05/2026 |
+| Agendar y citar paciente | ✅ PASS | 15/05/2026 |
 
 ---
 
-## 🗺�?Roadmap (Trabajo Futuro)
+## 🗺️ Roadmap (Trabajo Futuro)
 
 - [ ] Integración de mutuas y entidades financiadoras
 - [ ] Dashboard con KPIs y estadísticas (ticket medio, facturación comparativa)
@@ -252,19 +273,19 @@ Pruebas funcionales realizadas sobre la API REST con **Bruno** (alternativa open
 
 ## 📐 Metodología
 
-Proyecto desarrollado siguiendo la metodología **MÉTRICA v3** (estándar del Ministerio de Hacienda de España, basada en ISO/IEC 12207) con marco de trabajo **Scrum** (PSM I certificado), cubriendo todas las fases: Viabilidad �?Análisis �?Diseño �?Construcción �?Implantación �?Pruebas.
+Proyecto desarrollado siguiendo la metodología **MÉTRICA v3** (estándar del Ministerio de Hacienda de España, basada en ISO/IEC 12207) con marco de trabajo **Scrum** (PSM I certificado), cubriendo todas las fases: Viabilidad → Análisis → Diseño → Construcción → Implantación → Pruebas.
 
-**Duración total:** 280 horas · Sep 2025 �?May 2026
+**Duración total:** 280 horas · Sep 2025 – May 2026
 
 ---
 
-## 👨‍�?Autor
+## 👨‍💻 Autor
 
 **Julio Alberto Fernández Fuentes**  
 Software Engineer · DAW Matrícula de Honor (9,88) · Licenciado en ADE · PSM I
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin)](https://es.linkedin.com/in/julio-a-fern��ndez-fuentes-03932325a)
-[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github)](https://github.com/BoLCHeViKe)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin)](https://es.linkedin.com/in/tu-perfil)
+[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github)](https://github.com/tu-usuario)
 
 ---
 
