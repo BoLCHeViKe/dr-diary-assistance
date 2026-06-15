@@ -199,7 +199,7 @@ dr-diary-assistance/
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/tu-usuario/dr-diary-assistance.git
+git clone https://github.com/BoLCHeViKe/dr-diary-assistance.git
 cd dr-diary-assistance
 
 # 2. Configurar variables de entorno
@@ -284,8 +284,8 @@ Proyecto desarrollado siguiendo la metodología **MÉTRICA v3** (estándar del M
 **Julio Alberto Fernández Fuentes**  
 Software Engineer · DAW Matrícula de Honor (9,88) · Licenciado en ADE · PSM I
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin)](https://es.linkedin.com/in/tu-perfil)
-[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github)](https://github.com/tu-usuario)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin)](https://es.linkedin.com/in/julio-a-fernández-fuentes-03932325a)
+[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github)](https://github.com/BoLCHeViKe)
 
 ---
 
